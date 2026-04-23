@@ -1,0 +1,13 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: product-service
+  data:
+    mongodb:
+      uri: mongodb://root:root@localhost:27017/bankofgeorgia?authSource=admin
+
+logging:
+  level:
+    com.bankofgeorgia: DEBUG
