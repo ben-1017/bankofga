@@ -32,4 +32,9 @@ public class EmployeeController {
                 .toList();
         return ResponseEntity.ok(list);
     }
+
+    @GetMapping("/customers/{id}")
+    public ResponseEntity<CustomerResponse> customer(@PathVariable String id) {
+        return ResponseEntity.ok(CustomerResponse.from(employeeService.getCustomerById(id)));
+    }
 }
