@@ -2,6 +2,7 @@ package com.bankofgeorgia.customer.service;
 
 import com.bankofgeorgia.customer.dto.EmployeeLoginRequest;
 import com.bankofgeorgia.customer.exception.AuthException;
+import com.bankofgeorgia.customer.exception.CustomerNotFoundException;
 import com.bankofgeorgia.customer.model.Customer;
 import com.bankofgeorgia.customer.model.Employee;
 import com.bankofgeorgia.customer.repository.CustomerRepository;
@@ -37,5 +38,10 @@ public class EmployeeService {
 
     public List<Customer> listAllCustomers() {
         return customerRepository.findAll();
+    }
+
+    public Customer getCustomerById(String id) {
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException("customer not found"));
     }
 }
