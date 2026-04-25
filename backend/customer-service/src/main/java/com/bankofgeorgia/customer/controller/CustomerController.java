@@ -3,6 +3,7 @@ package com.bankofgeorgia.customer.controller;
 import com.bankofgeorgia.customer.dto.CustomerResponse;
 import com.bankofgeorgia.customer.dto.LoginRequest;
 import com.bankofgeorgia.customer.dto.RegisterRequest;
+import com.bankofgeorgia.customer.dto.UpdateCustomerRequest;
 import com.bankofgeorgia.customer.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -33,5 +34,11 @@ public class CustomerController {
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponse> profile(@PathVariable String id) {
         return ResponseEntity.ok(CustomerResponse.from(customerService.findById(id)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CustomerResponse> update(@PathVariable String id,
+                                                   @Valid @RequestBody UpdateCustomerRequest request) {
+        return ResponseEntity.ok(CustomerResponse.from(customerService.updateCustomer(id, request)));
     }
 }
