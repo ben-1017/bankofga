@@ -94,16 +94,17 @@ cd backend/customer-service
 mvn spring-boot:run
 ```
 
-The customer service starts on `http://localhost:8081`. Quick smoke test:
+The customer service starts on `http://localhost:8181` (port 8081 is taken by
+Mongo Express). Quick smoke test:
 
 ```bash
 # register
-curl -X POST http://localhost:8081/api/customers/register \
+curl -X POST http://localhost:8181/api/customers/register \
   -H 'Content-Type: application/json' \
   -d '{"name":"Ada Lovelace","email":"ada@example.com","username":"ada","phone":"555-0100","password":"hunter2pass"}'
 
 # login
-curl -X POST http://localhost:8081/api/customers/login \
+curl -X POST http://localhost:8181/api/customers/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"ada","password":"hunter2pass"}'
 ```
