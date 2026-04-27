@@ -1,0 +1,21 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: scheduler-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+app:
+  fee:
+    cron: "0 0 1 * * *"
+    amount: 5.00
+    topic: APPLY_MONTHLY_FEE_EVENT
+
+logging:
+  level:
+    com.bankofgeorgia: DEBUG

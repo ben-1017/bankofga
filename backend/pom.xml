@@ -29,5 +29,6 @@
         <module>notification-service</module>
         <module>account-service</module>
         <module>transaction-service</module>
+        <module>scheduler-service</module>
     </modules>
 </project>
