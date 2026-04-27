@@ -1,0 +1,26 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notification-service
+  data:
+    mongodb:
+      uri: mongodb://root:root@localhost:27017/bankofgeorgia?authSource=admin
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+app:
+  topics:
+    apply-monthly-fee: APPLY_MONTHLY_FEE_EVENT
+    withdraw: WITHDRAW_NOTIFICATION_EVENT
+    low-balance: LOW_MAINTENANCE_NOTIFICATION_EVENT
+
+logging:
+  level:
+    com.bankofgeorgia: DEBUG

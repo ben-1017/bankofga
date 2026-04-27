@@ -26,5 +26,6 @@
     <modules>
         <module>customer-service</module>
         <module>product-service</module>
+        <module>notification-service</module>
     </modules>
 </project>
