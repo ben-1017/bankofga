@@ -53,7 +53,7 @@ public class CustomerService {
 
     public Customer findById(String id) {
         return repository.findById(id)
-                .orElseThrow(() -> new AuthException("customer not found"));
+                .orElseThrow(() -> new CustomerNotFoundException("customer not found: " + id));
     }
 
     public Customer updateCustomer(String id, UpdateCustomerRequest request) {
