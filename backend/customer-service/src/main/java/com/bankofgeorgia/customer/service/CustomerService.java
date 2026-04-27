@@ -2,7 +2,9 @@ package com.bankofgeorgia.customer.service;
 
 import com.bankofgeorgia.customer.dto.LoginRequest;
 import com.bankofgeorgia.customer.dto.RegisterRequest;
+import com.bankofgeorgia.customer.dto.UpdateCustomerRequest;
 import com.bankofgeorgia.customer.exception.AuthException;
+import com.bankofgeorgia.customer.exception.CustomerNotFoundException;
 import com.bankofgeorgia.customer.exception.DuplicateCustomerException;
 import com.bankofgeorgia.customer.model.Customer;
 import com.bankofgeorgia.customer.repository.CustomerRepository;
@@ -52,5 +54,14 @@ public class CustomerService {
     public Customer findById(String id) {
         return repository.findById(id)
                 .orElseThrow(() -> new AuthException("customer not found"));
+    }
+
+    public Customer updateCustomer(String id, UpdateCustomerRequest request) {
+        Customer customer = repository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException("customer not found"));
+        if (request.name() != null) customer.setName(request.name());
+        if (request.email() != null) customer.setEmail(request.email());
+        if (request.phone() != null) customer.setPhone(request.phone());
+        return repository.save(customer);
     }
 }
