@@ -1,0 +1,282 @@
+{
+  "info": {
+    "name": "Bank of Georgia — Sprint 1",
+    "description": "API smoke + happy/error paths for customer-service (8081) and product-service (8082). Use with `docker compose up -d mongodb` and both services running via `mvn spring-boot:run`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "customer_host", "value": "http://localhost:8081" },
+    { "key": "product_host",  "value": "http://localhost:8082" },
+    { "key": "customer_id",   "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Customer Service (Ben)",
+      "item": [
+        {
+          "name": "Register customer — 201",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/customers/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Demo\",\n  \"email\": \"alice@demo.com\",\n  \"username\": \"alice\",\n  \"phone\": \"555-0101\",\n  \"password\": \"alicepass\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('returns id', () => pm.expect(body.id).to.be.a('string'));",
+                  "pm.test('no password leak', () => pm.expect(body.passwordHash).to.be.undefined);",
+                  "pm.collectionVariables.set('customer_id', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register duplicate — 409",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/customers/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Demo\",\n  \"email\": \"alice@demo.com\",\n  \"username\": \"alice\",\n  \"phone\": \"555-0101\",\n  \"password\": \"alicepass\"\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 409', () => pm.response.to.have.status(409));"] } }
+          ]
+        },
+        {
+          "name": "Login — 200",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/customers/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"alicepass\"\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+          ]
+        },
+        {
+          "name": "Login wrong password — 401",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/customers/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"wrong\"\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 401', () => pm.response.to.have.status(401));"] } }
+          ]
+        },
+        {
+          "name": "Get customer by id — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{customer_host}}/api/customers/{{customer_id}}"
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Employee Service (Quincy · Apr 22)",
+      "item": [
+        {
+          "name": "Employee login — 200",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/employees/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@bankofga.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('returns id + email', () => { pm.expect(b.id).to.be.a('string'); pm.expect(b.email).to.eql('admin@bankofga.com'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employee login wrong pwd — 401",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/employees/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@bankofga.com\",\n  \"password\": \"wrong\"\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 401', () => pm.response.to.have.status(401));"] } }
+          ]
+        },
+        {
+          "name": "Employee login unknown email — 401",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/employees/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ghost@bankofga.com\",\n  \"password\": \"x\"\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 401', () => pm.response.to.have.status(401));"] } }
+          ]
+        },
+        {
+          "name": "Employee login malformed email — 400",
+          "request": {
+            "method": "POST",
+            "url": "{{customer_host}}/api/employees/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"notanemail\",\n  \"password\": \"x\"\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }
+          ]
+        },
+        {
+          "name": "List customers (admin) — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{customer_host}}/api/employees/customers"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Product Service (Quincy · Apr 23)",
+      "item": [
+        {
+          "name": "Create checking product — 201",
+          "request": {
+            "method": "POST",
+            "url": "{{product_host}}/api/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"CHK-STD\",\n  \"type\": \"CHECKING\",\n  \"name\": \"Standard Checking\",\n  \"description\": \"Everyday checking with $5 monthly fee if balance < $100\",\n  \"minimumBalance\": 100,\n  \"monthlyFee\": 5,\n  \"interestRate\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('active defaults true', () => pm.expect(b.active).to.be.true);",
+                  "pm.test('has timestamps', () => { pm.expect(b.createdAt).to.be.a('string'); pm.expect(b.updatedAt).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create savings product — 201",
+          "request": {
+            "method": "POST",
+            "url": "{{product_host}}/api/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAV-STD\",\n  \"type\": \"SAVINGS\",\n  \"name\": \"Standard Savings\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": 0,\n  \"interestRate\": 0.02\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));"] } }
+          ]
+        },
+        {
+          "name": "Create duplicate code — 409",
+          "request": {
+            "method": "POST",
+            "url": "{{product_host}}/api/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"CHK-STD\",\n  \"type\": \"CHECKING\",\n  \"name\": \"duplicate\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": 0,\n  \"interestRate\": 0\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 409', () => pm.response.to.have.status(409));"] } }
+          ]
+        },
+        {
+          "name": "Create missing type — 400",
+          "request": {
+            "method": "POST",
+            "url": "{{product_host}}/api/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"BAD-1\",\n  \"name\": \"missing type\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": 0,\n  \"interestRate\": 0\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }
+          ]
+        },
+        {
+          "name": "Create negative fee — 400",
+          "request": {
+            "method": "POST",
+            "url": "{{product_host}}/api/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"BAD-2\",\n  \"type\": \"CHECKING\",\n  \"name\": \"neg fee\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": -5,\n  \"interestRate\": 0\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }
+          ]
+        }
+      ]
+    }
+  ]
+}
