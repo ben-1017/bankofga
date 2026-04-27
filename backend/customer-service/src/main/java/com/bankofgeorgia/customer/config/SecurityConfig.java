@@ -23,6 +23,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/customers/**").permitAll()
+                        .requestMatchers("/api/employees/**").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();
