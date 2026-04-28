@@ -5,14 +5,16 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "customer_host",    "value": "http://localhost:8181" },
-    { "key": "product_host",     "value": "http://localhost:8082" },
-    { "key": "account_host",     "value": "http://localhost:8083" },
-    { "key": "transaction_host", "value": "http://localhost:8084" },
-    { "key": "customer_id",      "value": "" },
-    { "key": "product_id",       "value": "" },
-    { "key": "account_id",       "value": "" },
-    { "key": "transaction_id",   "value": "" }
+    { "key": "customer_host",     "value": "http://localhost:8181" },
+    { "key": "product_host",      "value": "http://localhost:8082" },
+    { "key": "account_host",      "value": "http://localhost:8083" },
+    { "key": "transaction_host",  "value": "http://localhost:8084" },
+    { "key": "notification_host", "value": "http://localhost:8085" },
+    { "key": "customer_id",       "value": "" },
+    { "key": "product_id",        "value": "" },
+    { "key": "account_id",        "value": "" },
+    { "key": "transaction_id",    "value": "" },
+    { "key": "notification_id",   "value": "" }
   ],
   "item": [
     {
@@ -650,6 +652,43 @@
           "event": [
             { "listen": "test", "script": { "exec": ["pm.test('status 409', () => pm.response.to.have.status(409));"] } }
           ]
+        },
+        {
+          "name": "Get accounts by customer — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{account_host}}/api/accounts/customer/{{customer_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('contains the open account', () => pm.expect(pm.response.json().length).to.be.at.least(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get accounts by customer — empty — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{account_host}}/api/accounts/customer/cust-with-no-accounts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns empty array', () => pm.expect(pm.response.json()).to.eql([]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -738,6 +777,59 @@
           "request": {
             "method": "GET",
             "url": "{{transaction_host}}/api/transactions/nonexistent-id"
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notification Service — Quincy (Apr 28–29)",
+      "item": [
+        {
+          "name": "List notifications — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{notification_host}}/api/notifications"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "const arr = pm.response.json();",
+                  "if (arr.length > 0) pm.collectionVariables.set('notification_id', arr[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get notification by id — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{notification_host}}/api/notifications/{{notification_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns notification', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get notification not found — 404",
+          "request": {
+            "method": "GET",
+            "url": "{{notification_host}}/api/notifications/nonexistent-id"
           },
           "event": [
             { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
