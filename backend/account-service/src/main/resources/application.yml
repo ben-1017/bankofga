@@ -6,7 +6,7 @@ spring:
     name: account-service
   data:
     mongodb:
-      uri: mongodb://root:root@localhost:27017/bankofgeorgia?authSource=admin
+      uri: mongodb://localhost:27017/bankofgeorgia
 
 logging:
   level:
