@@ -619,6 +619,24 @@
           ]
         },
         {
+          "name": "Get accounts by customer — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{account_host}}/api/accounts/customer/{{customer_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Insufficient funds — 409",
           "request": {
             "method": "PUT",
