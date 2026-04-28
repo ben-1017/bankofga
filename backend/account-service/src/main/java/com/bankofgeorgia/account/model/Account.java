@@ -1,6 +1,7 @@
 package com.bankofgeorgia.account.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -12,6 +13,10 @@ public class Account {
 
     @Id
     private String id;
+
+    @Version
+    private Long version;
+
     private String customerId;
     private String productId;
 
@@ -24,6 +29,9 @@ public class Account {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 
     public String getCustomerId() { return customerId; }
     public void setCustomerId(String customerId) { this.customerId = customerId; }

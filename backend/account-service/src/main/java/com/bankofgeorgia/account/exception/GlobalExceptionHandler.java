@@ -1,5 +1,6 @@
 package com.bankofgeorgia.account.exception;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,6 +18,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccountNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(AccountNotFoundException ex) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler({InsufficientFundsException.class, AccountNotActiveException.class})
+    public ResponseEntity<Map<String, Object>> handleConflict(RuntimeException ex) {
+        return build(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> handleOptimisticLock(OptimisticLockingFailureException ex) {
+        return build(HttpStatus.CONFLICT, "concurrent update detected, please retry");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
