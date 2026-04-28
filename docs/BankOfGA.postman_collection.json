@@ -15,7 +15,9 @@
     { "key": "account_id",        "value": "" },
     { "key": "transaction_id",    "value": "" },
     { "key": "notification_id",   "value": "" },
-    { "key": "demo_username",     "value": "" }
+    { "key": "demo_username",     "value": "" },
+    { "key": "checking_code",     "value": "" },
+    { "key": "savings_code",      "value": "" }
   ],
   "item": [
     {
@@ -284,10 +286,20 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"CHK-STD\",\n  \"type\": \"CHECKING\",\n  \"name\": \"Standard Checking\",\n  \"description\": \"Everyday checking\",\n  \"minimumBalance\": 100,\n  \"monthlyFee\": 5,\n  \"interestRate\": 0\n}"
+              "raw": "{\n  \"code\": \"{{checking_code}}\",\n  \"type\": \"CHECKING\",\n  \"name\": \"Standard Checking\",\n  \"description\": \"Everyday checking\",\n  \"minimumBalance\": 100,\n  \"monthlyFee\": 5,\n  \"interestRate\": 0\n}"
             }
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const ts = Date.now();",
+                  "pm.collectionVariables.set('checking_code', 'CHK-' + ts);",
+                  "pm.collectionVariables.set('savings_code',  'SAV-' + ts);"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -309,7 +321,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"SAV-STD\",\n  \"type\": \"SAVINGS\",\n  \"name\": \"Standard Savings\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": 0,\n  \"interestRate\": 0.02\n}"
+              "raw": "{\n  \"code\": \"{{savings_code}}\",\n  \"type\": \"SAVINGS\",\n  \"name\": \"Standard Savings\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": 0,\n  \"interestRate\": 0.02\n}"
             }
           },
           "event": [
@@ -324,7 +336,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"CHK-STD\",\n  \"type\": \"CHECKING\",\n  \"name\": \"duplicate\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": 0,\n  \"interestRate\": 0\n}"
+              "raw": "{\n  \"code\": \"{{checking_code}}\",\n  \"type\": \"CHECKING\",\n  \"name\": \"duplicate\",\n  \"minimumBalance\": 0,\n  \"monthlyFee\": 0,\n  \"interestRate\": 0\n}"
             }
           },
           "event": [
