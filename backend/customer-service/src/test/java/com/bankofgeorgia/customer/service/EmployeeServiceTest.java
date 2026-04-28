@@ -2,6 +2,7 @@ package com.bankofgeorgia.customer.service;
 
 import com.bankofgeorgia.customer.dto.EmployeeLoginRequest;
 import com.bankofgeorgia.customer.exception.AuthException;
+import com.bankofgeorgia.customer.exception.CustomerNotFoundException;
 import com.bankofgeorgia.customer.model.Customer;
 import com.bankofgeorgia.customer.model.Employee;
 import com.bankofgeorgia.customer.repository.CustomerRepository;
@@ -85,5 +86,25 @@ class EmployeeServiceTest {
         when(customerRepository.findAll()).thenReturn(List.of());
 
         assertThat(employeeService.listAllCustomers()).isEmpty();
+    }
+
+    @Test
+    void getCustomerById_returnsCustomer_whenIdExists() {
+        Customer c = new Customer(); c.setId("c-1"); c.setUsername("alice");
+        when(customerRepository.findById("c-1")).thenReturn(Optional.of(c));
+
+        Customer result = employeeService.getCustomerById("c-1");
+
+        assertThat(result.getId()).isEqualTo("c-1");
+        assertThat(result.getUsername()).isEqualTo("alice");
+    }
+
+    @Test
+    void getCustomerById_throwsCustomerNotFound_whenIdMissing() {
+        when(customerRepository.findById("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> employeeService.getCustomerById("ghost"))
+                .isInstanceOf(CustomerNotFoundException.class)
+                .hasMessage("customer not found");
     }
 }
