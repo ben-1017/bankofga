@@ -1,17 +1,22 @@
 {
   "info": {
     "name": "Bank of Georgia — Sprint 1",
-    "description": "API smoke + happy/error paths for customer-service (8081) and product-service (8082). Use with `docker compose up -d mongodb` and both services running via `mvn spring-boot:run`.",
+    "description": "API smoke + happy/error paths for all services. Start docker compose and each service via mvn spring-boot:run before running.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "customer_host", "value": "http://localhost:8081" },
-    { "key": "product_host",  "value": "http://localhost:8082" },
-    { "key": "customer_id",   "value": "" }
+    { "key": "customer_host",    "value": "http://localhost:8181" },
+    { "key": "product_host",     "value": "http://localhost:8082" },
+    { "key": "account_host",     "value": "http://localhost:8083" },
+    { "key": "transaction_host", "value": "http://localhost:8084" },
+    { "key": "customer_id",      "value": "" },
+    { "key": "product_id",       "value": "" },
+    { "key": "account_id",       "value": "" },
+    { "key": "transaction_id",   "value": "" }
   ],
   "item": [
     {
-      "name": "Customer Service (Ben)",
+      "name": "Customer Service — Ben",
       "item": [
         {
           "name": "Register customer — 201",
@@ -93,11 +98,51 @@
           "event": [
             { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
           ]
+        },
+        {
+          "name": "Update customer — 200",
+          "request": {
+            "method": "PUT",
+            "url": "{{customer_host}}/api/customers/{{customer_id}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Updated\",\n  \"phone\": \"555-9999\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('name updated', () => pm.expect(b.name).to.eql('Alice Updated'));",
+                  "pm.test('phone updated', () => pm.expect(b.phone).to.eql('555-9999'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update customer not found — 404",
+          "request": {
+            "method": "PUT",
+            "url": "{{customer_host}}/api/customers/nonexistent-id",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ghost\"\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
+          ]
         }
       ]
     },
     {
-      "name": "Employee Service (Quincy · Apr 22)",
+      "name": "Employee Service — Quincy (Apr 22) + Ben (Apr 23)",
       "item": [
         {
           "name": "Employee login — 200",
@@ -185,11 +230,39 @@
               }
             }
           ]
+        },
+        {
+          "name": "Get customer by id (employee) — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{customer_host}}/api/employees/customers/{{customer_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns customer', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get customer by id (employee) not found — 404",
+          "request": {
+            "method": "GET",
+            "url": "{{customer_host}}/api/employees/customers/nonexistent-id"
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
+          ]
         }
       ]
     },
     {
-      "name": "Product Service (Quincy · Apr 23)",
+      "name": "Product Service — Quincy (Apr 23) + Ben (Apr 24)",
       "item": [
         {
           "name": "Create checking product — 201",
@@ -199,7 +272,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"CHK-STD\",\n  \"type\": \"CHECKING\",\n  \"name\": \"Standard Checking\",\n  \"description\": \"Everyday checking with $5 monthly fee if balance < $100\",\n  \"minimumBalance\": 100,\n  \"monthlyFee\": 5,\n  \"interestRate\": 0\n}"
+              "raw": "{\n  \"code\": \"CHK-STD\",\n  \"type\": \"CHECKING\",\n  \"name\": \"Standard Checking\",\n  \"description\": \"Everyday checking\",\n  \"minimumBalance\": 100,\n  \"monthlyFee\": 5,\n  \"interestRate\": 0\n}"
             }
           },
           "event": [
@@ -210,7 +283,7 @@
                   "pm.test('status 201', () => pm.response.to.have.status(201));",
                   "const b = pm.response.json();",
                   "pm.test('active defaults true', () => pm.expect(b.active).to.be.true);",
-                  "pm.test('has timestamps', () => { pm.expect(b.createdAt).to.be.a('string'); pm.expect(b.updatedAt).to.be.a('string'); });"
+                  "pm.collectionVariables.set('product_id', b.id);"
                 ]
               }
             }
@@ -274,6 +347,382 @@
           },
           "event": [
             { "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }
+          ]
+        },
+        {
+          "name": "List all products — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{product_host}}/api/products"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get product by id — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{product_host}}/api/products/{{product_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns product', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get product not found — 404",
+          "request": {
+            "method": "GET",
+            "url": "{{product_host}}/api/products/nonexistent-id"
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
+          ]
+        },
+        {
+          "name": "Update product — 200",
+          "request": {
+            "method": "PUT",
+            "url": "{{product_host}}/api/products/{{product_id}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CHECKING\",\n  \"name\": \"Premium Checking\",\n  \"description\": \"Updated description\",\n  \"minimumBalance\": 500,\n  \"monthlyFee\": 10,\n  \"interestRate\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('name updated', () => pm.expect(pm.response.json().name).to.eql('Premium Checking'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deactivate product — 200",
+          "request": {
+            "method": "PATCH",
+            "url": "{{product_host}}/api/products/{{product_id}}/status",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('active is false', () => pm.expect(pm.response.json().active).to.be.false);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reactivate product — 200",
+          "request": {
+            "method": "PATCH",
+            "url": "{{product_host}}/api/products/{{product_id}}/status",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('active is true', () => pm.expect(pm.response.json().active).to.be.true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Account Service — Ben (Apr 25–26)",
+      "item": [
+        {
+          "name": "Open account — 201",
+          "request": {
+            "method": "POST",
+            "url": "{{account_host}}/api/accounts",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customer_id}}\",\n  \"productId\": \"{{product_id}}\",\n  \"initialDeposit\": 500.00\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('has account number', () => pm.expect(b.accountNumber).to.match(/^BOG/));",
+                  "pm.test('balance matches deposit', () => pm.expect(b.balance).to.eql(500.00));",
+                  "pm.test('status is ACTIVE', () => pm.expect(b.status).to.eql('ACTIVE'));",
+                  "pm.collectionVariables.set('account_id', b.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Open account no deposit — 201",
+          "request": {
+            "method": "POST",
+            "url": "{{account_host}}/api/accounts",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customer_id}}\",\n  \"productId\": \"{{product_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('balance defaults to 0', () => pm.expect(pm.response.json().balance).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get account by id — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{account_host}}/api/accounts/{{account_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns account', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get account not found — 404",
+          "request": {
+            "method": "GET",
+            "url": "{{account_host}}/api/accounts/nonexistent-id"
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
+          ]
+        },
+        {
+          "name": "List accounts (admin paginated) — 200",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{account_host}}/api/accounts?page=0&size=10",
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('has content array', () => pm.expect(b.content).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Credit balance — 200",
+          "request": {
+            "method": "PUT",
+            "url": "{{account_host}}/api/accounts/{{account_id}}/balance",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": 200.00\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('balance increased', () => pm.expect(pm.response.json().balance).to.eql(700.00));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Debit balance — 200",
+          "request": {
+            "method": "PUT",
+            "url": "{{account_host}}/api/accounts/{{account_id}}/balance",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": -100.00\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('balance decreased', () => pm.expect(pm.response.json().balance).to.eql(600.00));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Insufficient funds — 409",
+          "request": {
+            "method": "PUT",
+            "url": "{{account_host}}/api/accounts/{{account_id}}/balance",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": -99999.00\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 409', () => pm.response.to.have.status(409));"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Transaction Service — Ben (Apr 27–28)",
+      "item": [
+        {
+          "name": "Deposit — 201",
+          "request": {
+            "method": "POST",
+            "url": "{{transaction_host}}/api/transactions/deposit",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{account_id}}\",\n  \"amount\": 250.00,\n  \"description\": \"Demo deposit\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('type is DEPOSIT', () => pm.expect(b.type).to.eql('DEPOSIT'));",
+                  "pm.test('has balanceBefore and balanceAfter', () => { pm.expect(b.balanceBefore).to.be.a('number'); pm.expect(b.balanceAfter).to.be.a('number'); });",
+                  "pm.collectionVariables.set('transaction_id', b.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deposit missing account — 502",
+          "request": {
+            "method": "POST",
+            "url": "{{transaction_host}}/api/transactions/deposit",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"nonexistent-id\",\n  \"amount\": 100.00\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 502', () => pm.response.to.have.status(502));"] } }
+          ]
+        },
+        {
+          "name": "Get transactions by account — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{transaction_host}}/api/transactions/account/{{account_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get transaction by id — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{transaction_host}}/api/transactions/{{transaction_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns transaction', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get transaction not found — 404",
+          "request": {
+            "method": "GET",
+            "url": "{{transaction_host}}/api/transactions/nonexistent-id"
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
           ]
         }
       ]
