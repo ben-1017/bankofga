@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -51,6 +52,10 @@ public class AccountService {
 
     public Page<Account> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    public List<Account> findByCustomer(String customerId) {
+        return repository.findByCustomerId(customerId);
     }
 
     public Account updateBalance(String id, BalanceUpdateRequest request) {

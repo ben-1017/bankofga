@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,6 +96,28 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.updateBalance("acc-1", new BalanceUpdateRequest(new BigDecimal("50"))))
                 .isInstanceOf(AccountNotActiveException.class)
                 .hasMessage("account is not active");
+    }
+
+    @Test
+    void findByCustomer_returnsAllAccountsForCustomer() {
+        Account a1 = activeAccount("acc-1", new BigDecimal("100"));
+        a1.setCustomerId("cust-1");
+        Account a2 = activeAccount("acc-2", new BigDecimal("250"));
+        a2.setCustomerId("cust-1");
+        when(repository.findByCustomerId("cust-1")).thenReturn(List.of(a1, a2));
+
+        List<Account> result = accountService.findByCustomer("cust-1");
+
+        assertThat(result).extracting(Account::getId).containsExactly("acc-1", "acc-2");
+    }
+
+    @Test
+    void findByCustomer_returnsEmptyList_whenCustomerHasNoAccounts() {
+        when(repository.findByCustomerId("cust-none")).thenReturn(List.of());
+
+        List<Account> result = accountService.findByCustomer("cust-none");
+
+        assertThat(result).isEmpty();
     }
 
     @Test
