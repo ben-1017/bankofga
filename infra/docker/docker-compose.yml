@@ -86,6 +86,112 @@ services:
     networks:
       - bog-net
 
+  customer-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: customer-service
+    container_name: bog-customer-service
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    ports:
+      - "8181:8181"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
+    networks:
+      - bog-net
+
+  product-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: product-service
+    container_name: bog-product-service
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
+    networks:
+      - bog-net
+
+  account-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: account-service
+    container_name: bog-account-service
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
+    networks:
+      - bog-net
+
+  transaction-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: transaction-service
+    container_name: bog-transaction-service
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - account-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
+      ACCOUNT_SERVICE_URL: http://account-service:8083
+    networks:
+      - bog-net
+
+  notification-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: notification-service
+    container_name: bog-notification-service
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - kafka
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    networks:
+      - bog-net
+
+  scheduler-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: scheduler-service
+    container_name: bog-scheduler-service
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    networks:
+      - bog-net
+
 volumes:
   mongo-data:
   redis-data:
