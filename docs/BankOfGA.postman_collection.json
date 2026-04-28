@@ -14,7 +14,8 @@
     { "key": "product_id",        "value": "" },
     { "key": "account_id",        "value": "" },
     { "key": "transaction_id",    "value": "" },
-    { "key": "notification_id",   "value": "" }
+    { "key": "notification_id",   "value": "" },
+    { "key": "demo_username",     "value": "" }
   ],
   "item": [
     {
@@ -28,10 +29,19 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Alice Demo\",\n  \"email\": \"alice@demo.com\",\n  \"username\": \"alice\",\n  \"phone\": \"555-0101\",\n  \"password\": \"alicepass\"\n}"
+              "raw": "{\n  \"name\": \"Alice Demo\",\n  \"email\": \"{{demo_username}}@demo.com\",\n  \"username\": \"{{demo_username}}\",\n  \"phone\": \"555-0101\",\n  \"password\": \"alicepass\"\n}"
             }
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const u = 'alice_' + Date.now();",
+                  "pm.collectionVariables.set('demo_username', u);"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -54,7 +64,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Alice Demo\",\n  \"email\": \"alice@demo.com\",\n  \"username\": \"alice\",\n  \"phone\": \"555-0101\",\n  \"password\": \"alicepass\"\n}"
+              "raw": "{\n  \"name\": \"Alice Demo\",\n  \"email\": \"{{demo_username}}@demo.com\",\n  \"username\": \"{{demo_username}}\",\n  \"phone\": \"555-0101\",\n  \"password\": \"alicepass\"\n}"
             }
           },
           "event": [
@@ -69,7 +79,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"alicepass\"\n}"
+              "raw": "{\n  \"username\": \"{{demo_username}}\",\n  \"password\": \"alicepass\"\n}"
             }
           },
           "event": [
@@ -84,7 +94,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"wrong\"\n}"
+              "raw": "{\n  \"username\": \"{{demo_username}}\",\n  \"password\": \"wrong\"\n}"
             }
           },
           "event": [
