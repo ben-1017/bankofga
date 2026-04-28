@@ -9,6 +9,7 @@ import com.bankofgeorgia.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 public class ProductService {
@@ -37,6 +38,15 @@ public class ProductService {
         product.setCreatedAt(now);
         product.setUpdatedAt(now);
         return repository.save(product);
+    }
+
+    public List<Product> findAll() {
+        return repository.findAll();
+    }
+
+    public Product findById(String id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("product not found"));
     }
 
     public Product update(String id, UpdateProductRequest request) {
