@@ -788,10 +788,10 @@
       "name": "Notification Service — Quincy (Apr 28–29)",
       "item": [
         {
-          "name": "List notifications — 200",
+          "name": "Get notifications by customer — 200",
           "request": {
             "method": "GET",
-            "url": "{{notification_host}}/api/notifications"
+            "url": "{{notification_host}}/api/notifications/customer/{{customer_id}}"
           },
           "event": [
             {
@@ -808,10 +808,10 @@
           ]
         },
         {
-          "name": "Get notification by id — 200",
+          "name": "Get notifications by unknown customer — empty 200",
           "request": {
             "method": "GET",
-            "url": "{{notification_host}}/api/notifications/{{notification_id}}"
+            "url": "{{notification_host}}/api/notifications/customer/no-such-customer"
           },
           "event": [
             {
@@ -819,7 +819,7 @@
               "script": {
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('returns notification', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+                  "pm.test('returns empty array', () => pm.expect(pm.response.json()).to.eql([]));"
                 ]
               }
             }
