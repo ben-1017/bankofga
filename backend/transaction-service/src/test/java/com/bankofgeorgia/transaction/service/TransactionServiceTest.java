@@ -86,11 +86,31 @@ class TransactionServiceTest {
     }
 
     @Test
+    void findByAccount_returnsEmpty_whenNoTransactions() {
+        when(repository.findByAccountIdOrderByCreatedAtDesc("acc-1")).thenReturn(List.of());
+
+        assertThat(transactionService.findByAccount("acc-1")).isEmpty();
+    }
+
+    @Test
     void findById_throwsNotFound_whenMissing() {
         when(repository.findById("bad-id")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> transactionService.findById("bad-id"))
                 .isInstanceOf(TransactionNotFoundException.class)
                 .hasMessage("transaction not found");
+    }
+
+    @Test
+    void findById_returnsTransaction_whenExists() {
+        Transaction tx = new Transaction();
+        tx.setAccountId("acc-1");
+        tx.setAmount(new BigDecimal("50"));
+        when(repository.findById("tx-1")).thenReturn(Optional.of(tx));
+
+        Transaction result = transactionService.findById("tx-1");
+
+        assertThat(result.getAccountId()).isEqualTo("acc-1");
+        assertThat(result.getAmount()).isEqualByComparingTo("50");
     }
 }
