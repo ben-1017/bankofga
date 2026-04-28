@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/accounts")
 public class AccountController {
@@ -29,6 +31,14 @@ public class AccountController {
     @GetMapping("/{id}")
     public ResponseEntity<AccountResponse> get(@PathVariable String id) {
         return ResponseEntity.ok(AccountResponse.from(accountService.findById(id)));
+    }
+
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<AccountResponse>> getByCustomer(@PathVariable String customerId) {
+        List<AccountResponse> accounts = accountService.findByCustomer(customerId).stream()
+                .map(AccountResponse::from)
+                .toList();
+        return ResponseEntity.ok(accounts);
     }
 
     @GetMapping
