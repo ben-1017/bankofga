@@ -15,11 +15,22 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+customer:
+  service:
+    url: ${CUSTOMER_SERVICE_URL:http://localhost:8181}
+
 app:
   topics:
     apply-monthly-fee: APPLY_MONTHLY_FEE_EVENT
     withdraw: WITHDRAW_NOTIFICATION_EVENT
     low-balance: LOW_MAINTENANCE_NOTIFICATION_EVENT
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY:}
+    from: ${SENDGRID_FROM:no-reply@bankofgeorgia.dev}
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    from-number: ${TWILIO_FROM_NUMBER:}
 
 logging:
   level:
