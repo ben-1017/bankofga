@@ -2,6 +2,7 @@ package com.bankofgeorgia.transaction.controller;
 
 import com.bankofgeorgia.transaction.dto.DepositRequest;
 import com.bankofgeorgia.transaction.dto.TransactionResponse;
+import com.bankofgeorgia.transaction.dto.WithdrawRequest;
 import com.bankofgeorgia.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,12 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> deposit(@Valid @RequestBody DepositRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(TransactionResponse.from(transactionService.deposit(request)));
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<TransactionResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(TransactionResponse.from(transactionService.withdraw(request)));
     }
 
     @GetMapping("/account/{accountId}")

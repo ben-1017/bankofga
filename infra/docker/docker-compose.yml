@@ -147,11 +147,13 @@ services:
     restart: unless-stopped
     depends_on:
       - mongodb
+      - kafka
       - account-service
     ports:
       - "8084:8084"
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       ACCOUNT_SERVICE_URL: http://account-service:8083
     networks:
       - bog-net
