@@ -172,6 +172,37 @@ services:
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CUSTOMER_SERVICE_URL: http://customer-service:8181
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      SENDGRID_FROM: ${SENDGRID_FROM:-no-reply@bankofgeorgia.dev}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+    networks:
+      - bog-net
+
+  api-gateway:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
+    container_name: bog-api-gateway
+    restart: unless-stopped
+    depends_on:
+      - customer-service
+      - product-service
+      - account-service
+      - transaction-service
+      - notification-service
+    ports:
+      - "8080:8080"
+    environment:
+      CUSTOMER_SERVICE_URL: http://customer-service:8181
+      PRODUCT_SERVICE_URL: http://product-service:8082
+      ACCOUNT_SERVICE_URL: http://account-service:8083
+      TRANSACTION_SERVICE_URL: http://transaction-service:8084
+      NOTIFICATION_SERVICE_URL: http://notification-service:8085
     networks:
       - bog-net
 

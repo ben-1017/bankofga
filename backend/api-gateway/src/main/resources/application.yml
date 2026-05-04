@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        - id: customer-service
+          uri: ${CUSTOMER_SERVICE_URL:http://localhost:8181}
+          predicates:
+            - Path=/api/customers/**,/api/employees/**
+        - id: product-service
+          uri: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/products/**
+        - id: account-service
+          uri: ${ACCOUNT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/accounts/**
+        - id: transaction-service
+          uri: ${TRANSACTION_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/transactions/**
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/notifications/**
+
+logging:
+  level:
+    com.bankofgeorgia: DEBUG
+    org.springframework.cloud.gateway: INFO
