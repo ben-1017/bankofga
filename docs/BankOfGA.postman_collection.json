@@ -753,6 +753,70 @@
           ]
         },
         {
+          "name": "Withdraw — 201",
+          "request": {
+            "method": "POST",
+            "url": "{{transaction_host}}/api/transactions/withdraw",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{account_id}}\",\n  \"amount\": 50.00,\n  \"description\": \"Demo withdrawal\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('type is WITHDRAWAL', () => pm.expect(b.type).to.eql('WITHDRAWAL'));",
+                  "pm.test('balanceAfter < balanceBefore', () => pm.expect(b.balanceAfter).to.be.lessThan(b.balanceBefore));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw insufficient funds — 409",
+          "request": {
+            "method": "POST",
+            "url": "{{transaction_host}}/api/transactions/withdraw",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{account_id}}\",\n  \"amount\": 9999999.00,\n  \"description\": \"Overdraft attempt\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));",
+                  "const b = pm.response.json();",
+                  "pm.test('message mentions insufficient', () => pm.expect((b.message||'').toLowerCase()).to.include('insufficient'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw missing account — 502",
+          "request": {
+            "method": "POST",
+            "url": "{{transaction_host}}/api/transactions/withdraw",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"nonexistent-acc\",\n  \"amount\": 10.00\n}"
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 502', () => pm.response.to.have.status(502));"] } }
+          ]
+        },
+        {
           "name": "Get transactions by account — 200",
           "request": {
             "method": "GET",

@@ -2,7 +2,11 @@ package com.bankofgeorgia.transaction.service;
 
 import com.bankofgeorgia.transaction.dto.AccountResponse;
 import com.bankofgeorgia.transaction.dto.DepositRequest;
+import com.bankofgeorgia.transaction.dto.WithdrawRequest;
+import com.bankofgeorgia.transaction.event.WithdrawEventPublisher;
+import com.bankofgeorgia.transaction.event.WithdrawNotificationEvent;
 import com.bankofgeorgia.transaction.exception.AccountServiceException;
+import com.bankofgeorgia.transaction.exception.InsufficientFundsException;
 import com.bankofgeorgia.transaction.exception.TransactionNotFoundException;
 import com.bankofgeorgia.transaction.model.Transaction;
 import com.bankofgeorgia.transaction.model.TransactionType;
@@ -10,22 +14,28 @@ import com.bankofgeorgia.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +43,7 @@ class TransactionServiceTest {
 
     @Mock private TransactionRepository repository;
     @Mock private RestTemplate restTemplate;
+    @Mock private WithdrawEventPublisher withdrawEventPublisher;
     @InjectMocks private TransactionService transactionService;
 
     @BeforeEach
@@ -42,8 +53,8 @@ class TransactionServiceTest {
 
     @Test
     void deposit_recordsTransactionWithCorrectBalances() {
-        AccountResponse before = new AccountResponse("acc-1", "BOG123", new BigDecimal("100"), "ACTIVE");
-        AccountResponse after  = new AccountResponse("acc-1", "BOG123", new BigDecimal("150"), "ACTIVE");
+        AccountResponse before = new AccountResponse("acc-1", "cust-1", "BOG123", new BigDecimal("100"), "ACTIVE");
+        AccountResponse after  = new AccountResponse("acc-1", "cust-1", "BOG123", new BigDecimal("150"), "ACTIVE");
 
         when(restTemplate.getForObject(anyString(), eq(AccountResponse.class))).thenReturn(before);
         when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(), eq(AccountResponse.class)))
@@ -74,6 +85,65 @@ class TransactionServiceTest {
         assertThatThrownBy(() -> transactionService.deposit(new DepositRequest("acc-1", new BigDecimal("50"), null)))
                 .isInstanceOf(AccountServiceException.class)
                 .hasMessageContaining("account not found");
+    }
+
+    @Test
+    void withdraw_recordsTransactionAndPublishesEvent() {
+        AccountResponse before = new AccountResponse("acc-1", "cust-9", "BOG123", new BigDecimal("100"), "ACTIVE");
+        AccountResponse after  = new AccountResponse("acc-1", "cust-9", "BOG123", new BigDecimal("60"), "ACTIVE");
+
+        when(restTemplate.getForObject(anyString(), eq(AccountResponse.class))).thenReturn(before);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(), eq(AccountResponse.class)))
+                .thenReturn(ResponseEntity.ok(after));
+        when(repository.save(any())).thenAnswer(inv -> {
+            Transaction t = inv.getArgument(0);
+            t.setId("tx-99");
+            return t;
+        });
+
+        Transaction tx = transactionService.withdraw(new WithdrawRequest("acc-1", new BigDecimal("40"), "atm"));
+
+        assertThat(tx.getType()).isEqualTo(TransactionType.WITHDRAWAL);
+        assertThat(tx.getBalanceBefore()).isEqualByComparingTo("100");
+        assertThat(tx.getBalanceAfter()).isEqualByComparingTo("60");
+        assertThat(tx.getAmount()).isEqualByComparingTo("40");
+
+        ArgumentCaptor<WithdrawNotificationEvent> evt = ArgumentCaptor.forClass(WithdrawNotificationEvent.class);
+        verify(withdrawEventPublisher).publish(evt.capture());
+        assertThat(evt.getValue().transactionId()).isEqualTo("tx-99");
+        assertThat(evt.getValue().customerId()).isEqualTo("cust-9");
+        assertThat(evt.getValue().amount()).isEqualByComparingTo("40");
+        assertThat(evt.getValue().balanceAfter()).isEqualByComparingTo("60");
+    }
+
+    @Test
+    void withdraw_throwsInsufficientFunds_whenAccountServiceReturns409() {
+        AccountResponse before = new AccountResponse("acc-1", "cust-1", "BOG123", new BigDecimal("10"), "ACTIVE");
+        when(restTemplate.getForObject(anyString(), eq(AccountResponse.class))).thenReturn(before);
+        HttpClientErrorException conflict = HttpClientErrorException.create(
+                HttpStatus.CONFLICT, "Conflict", new HttpHeaders(),
+                "{\"message\":\"insufficient funds\"}".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(), eq(AccountResponse.class)))
+                .thenThrow(conflict);
+
+        assertThatThrownBy(() -> transactionService.withdraw(new WithdrawRequest("acc-1", new BigDecimal("100"), null)))
+                .isInstanceOf(InsufficientFundsException.class)
+                .hasMessage("insufficient funds");
+    }
+
+    @Test
+    void withdraw_succeedsEvenIfPublisherFails() {
+        AccountResponse before = new AccountResponse("acc-1", "cust-1", "BOG123", new BigDecimal("100"), "ACTIVE");
+        AccountResponse after  = new AccountResponse("acc-1", "cust-1", "BOG123", new BigDecimal("80"), "ACTIVE");
+        when(restTemplate.getForObject(anyString(), eq(AccountResponse.class))).thenReturn(before);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(), eq(AccountResponse.class)))
+                .thenReturn(ResponseEntity.ok(after));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        doThrow(new RuntimeException("kafka down")).when(withdrawEventPublisher).publish(any());
+
+        Transaction tx = transactionService.withdraw(new WithdrawRequest("acc-1", new BigDecimal("20"), null));
+
+        assertThat(tx.getBalanceAfter()).isEqualByComparingTo("80");
     }
 
     @Test
