@@ -10,6 +10,7 @@
     { "key": "account_host",      "value": "http://localhost:8083" },
     { "key": "transaction_host",  "value": "http://localhost:8084" },
     { "key": "notification_host", "value": "http://localhost:8085" },
+    { "key": "gateway_host",      "value": "http://localhost:8080" },
     { "key": "customer_id",       "value": "" },
     { "key": "product_id",        "value": "" },
     { "key": "account_id",        "value": "" },
@@ -910,6 +911,153 @@
           "request": {
             "method": "GET",
             "url": "{{notification_host}}/api/notifications/nonexistent-id"
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "API Gateway — Ben (Apr 30)",
+      "item": [
+        {
+          "name": "Gateway health — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/actuator/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('reports UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Route to customer-service — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/customers/{{customer_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns customer with matching id', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('customer_id')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Route to product-service — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/products"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Route to account-service — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/accounts/{{account_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns account with matching id', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('account_id')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Route to transaction-service — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/transactions/account/{{account_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Route to notification-service — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/notifications/customer/{{customer_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CORS preflight allowed — 200",
+          "request": {
+            "method": "OPTIONS",
+            "url": "{{gateway_host}}/api/customers/login",
+            "header": [
+              { "key": "Origin", "value": "http://localhost:5173" },
+              { "key": "Access-Control-Request-Method", "value": "POST" },
+              { "key": "Access-Control-Request-Headers", "value": "content-type" }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('preflight ok (200/204)', () => pm.expect([200, 204]).to.include(pm.response.code));",
+                  "pm.test('Access-Control-Allow-Origin echoed', () => pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.eql('http://localhost:5173'));",
+                  "pm.test('POST allowed in methods', () => pm.expect((pm.response.headers.get('Access-Control-Allow-Methods') || '').toUpperCase()).to.include('POST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown route — 404",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/does-not-exist"
           },
           "event": [
             { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }

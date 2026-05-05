@@ -6,3 +6,7 @@ export const api = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
 });
+
+export function unwrap(promise) {
+  return promise.then((res) => res.data);
+}

@@ -13,15 +13,16 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between">
           <Link to="/" className="font-bold tracking-tight">
-            Bank of Georgia <span className="text-gray-400 font-normal">— Admin</span>
+            Bank of Georgia <span className="text-gray-400 font-normal">— Customer</span>
           </Link>
           <div className="flex items-center gap-1">
             {user ? (
               <>
                 <NavLink to="/" end className={linkClass}>Dashboard</NavLink>
-                <NavLink to="/products" className={linkClass}>Products</NavLink>
-                <NavLink to="/customers" className={linkClass}>Customers</NavLink>
                 <NavLink to="/accounts" className={linkClass}>Accounts</NavLink>
+                <NavLink to="/transactions" className={linkClass}>Transactions</NavLink>
+                <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
+                <NavLink to="/profile" className={linkClass}>Profile</NavLink>
                 <button
                   type="button"
                   onClick={logout}
@@ -31,7 +32,10 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <NavLink to="/login" className={linkClass}>Sign in</NavLink>
+              <>
+                <NavLink to="/login" className={linkClass}>Sign in</NavLink>
+                <NavLink to="/register" className={linkClass}>Register</NavLink>
+              </>
             )}
           </div>
         </div>

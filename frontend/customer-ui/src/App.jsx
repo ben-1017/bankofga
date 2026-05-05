@@ -1,14 +1,17 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import Navbar from './components/Navbar.jsx';
+import Footer from './components/Footer.jsx';
 
 export default function App() {
   return (
-    <div style={{ minHeight: '100vh' }}>
-      <header style={{ padding: '1rem 2rem', background: '#1f2933', color: '#fff' }}>
-        <Link to="/" style={{ color: '#fff', fontWeight: 700 }}>Bank of Georgia</Link>
-      </header>
-      <main style={{ padding: '2rem' }}>
-        <Outlet />
+    <div className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
+      <Navbar />
+      <main className="flex-1">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <Outlet />
+        </div>
       </main>
+      <Footer />
     </div>
   );
 }
