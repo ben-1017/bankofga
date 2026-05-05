@@ -172,12 +172,6 @@ services:
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bankofgeorgia
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      CUSTOMER_SERVICE_URL: http://customer-service:8181
-      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
-      SENDGRID_FROM: ${SENDGRID_FROM:-no-reply@bankofgeorgia.dev}
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
     networks:
       - bog-net
 
@@ -203,6 +197,12 @@ services:
       ACCOUNT_SERVICE_URL: http://account-service:8083
       TRANSACTION_SERVICE_URL: http://transaction-service:8084
       NOTIFICATION_SERVICE_URL: http://notification-service:8085
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
     networks:
       - bog-net
 

@@ -23,6 +23,7 @@ spring:
             allowCredentials: true
             maxAge: 3600
       routes:
+        # customer-service runs on 8181 by intent (legacy choice; not the spec doc's 8081)
         - id: customer-service
           uri: ${CUSTOMER_SERVICE_URL:http://localhost:8181}
           predicates:
@@ -43,6 +44,16 @@ spring:
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/notifications/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
 
 logging:
   level:
