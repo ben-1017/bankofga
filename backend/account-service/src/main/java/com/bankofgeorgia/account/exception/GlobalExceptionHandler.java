@@ -38,6 +38,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, msg);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());

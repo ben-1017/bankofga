@@ -59,6 +59,10 @@ public class AccountService {
     }
 
     public Account updateBalance(String id, BalanceUpdateRequest request) {
+        if (request.delta().signum() == 0) {
+            throw new IllegalArgumentException("delta must be non-zero");
+        }
+
         Account account = findById(id);
 
         if (account.getStatus() != AccountStatus.ACTIVE) {

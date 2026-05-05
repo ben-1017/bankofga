@@ -78,6 +78,24 @@ class AccountServiceTest {
     }
 
     @Test
+    void updateBalance_debitsCorrectly_whenDeltaNegative() {
+        Account account = activeAccount("acc-1", new BigDecimal("100"));
+        when(repository.findById("acc-1")).thenReturn(Optional.of(account));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Account result = accountService.updateBalance("acc-1", new BalanceUpdateRequest(new BigDecimal("-40")));
+
+        assertThat(result.getBalance()).isEqualByComparingTo("60");
+    }
+
+    @Test
+    void updateBalance_throwsIllegalArgument_whenDeltaIsZero() {
+        assertThatThrownBy(() -> accountService.updateBalance("acc-1", new BalanceUpdateRequest(BigDecimal.ZERO)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("delta must be non-zero");
+    }
+
+    @Test
     void updateBalance_throwsInsufficientFunds_whenBalanceGoesNegative() {
         Account account = activeAccount("acc-1", new BigDecimal("30"));
         when(repository.findById("acc-1")).thenReturn(Optional.of(account));
