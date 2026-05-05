@@ -22,6 +22,11 @@
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <!-- Spring Boot 3.3.4 ships Mockito 5.11, whose bundled ByteBuddy can't
+             read JDK 24 class files. Bump Mockito (and ByteBuddy) to versions
+             that support JDK 24 so unit tests run on a modern JDK. -->
+        <mockito.version>5.15.2</mockito.version>
+        <byte-buddy.version>1.15.11</byte-buddy.version>
     </properties>
 
     <dependencyManagement>
