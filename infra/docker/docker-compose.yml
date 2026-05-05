@@ -175,6 +175,37 @@ services:
     networks:
       - bog-net
 
+  api-gateway:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
+    container_name: bog-api-gateway
+    restart: unless-stopped
+    depends_on:
+      - customer-service
+      - product-service
+      - account-service
+      - transaction-service
+      - notification-service
+    ports:
+      - "8080:8080"
+    environment:
+      CUSTOMER_SERVICE_URL: http://customer-service:8181
+      PRODUCT_SERVICE_URL: http://product-service:8082
+      ACCOUNT_SERVICE_URL: http://account-service:8083
+      TRANSACTION_SERVICE_URL: http://transaction-service:8084
+      NOTIFICATION_SERVICE_URL: http://notification-service:8085
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    networks:
+      - bog-net
+
   scheduler-service:
     build:
       context: ../../backend
