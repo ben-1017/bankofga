@@ -10,6 +10,7 @@
     { "key": "account_host",      "value": "http://localhost:8083" },
     { "key": "transaction_host",  "value": "http://localhost:8084" },
     { "key": "notification_host", "value": "http://localhost:8085" },
+    { "key": "gateway_host",      "value": "http://localhost:8080" },
     { "key": "customer_id",       "value": "" },
     { "key": "product_id",        "value": "" },
     { "key": "account_id",        "value": "" },
@@ -913,6 +914,123 @@
           },
           "event": [
             { "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "API Gateway Smoke — Sprint 2",
+      "description": "Verifies Spring Cloud Gateway on :8080 routes /api/** to the correct downstream services. Each request mirrors a direct-service request earlier in the collection — same path, same expected shape, just via the gateway. Run after the per-service folders so collection variables (customer_id, account_id, transaction_id, product_id) are populated.",
+      "item": [
+        {
+          "name": "Gateway → customer-service: GET /api/customers/{id} — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/customers/{{customer_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('id matches', () => pm.expect(b.id).to.eql(pm.collectionVariables.get('customer_id')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gateway → product-service: GET /api/products/{id} — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/products/{{product_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('id matches', () => pm.expect(b.id).to.eql(pm.collectionVariables.get('product_id')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gateway → account-service: GET /api/accounts/{id} — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/accounts/{{account_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('id matches', () => pm.expect(b.id).to.eql(pm.collectionVariables.get('account_id')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gateway → transaction-service: GET /api/transactions/{id} — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/transactions/{{transaction_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('id matches', () => pm.expect(b.id).to.eql(pm.collectionVariables.get('transaction_id')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gateway → notification-service: GET /api/notifications/customer/{id} — 200",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/notifications/customer/{{customer_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gateway → unmapped path returns 404",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_host}}/api/does-not-exist"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
           ]
         }
       ]
