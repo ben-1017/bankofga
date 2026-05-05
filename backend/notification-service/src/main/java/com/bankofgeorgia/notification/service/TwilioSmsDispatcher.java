@@ -5,6 +5,7 @@ import com.twilio.Twilio;
 import com.twilio.exception.ApiException;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +20,6 @@ public class TwilioSmsDispatcher {
     private final String authToken;
     private final String fromNumber;
     private final CustomerLookup customerLookup;
-    private boolean initialized;
 
     public TwilioSmsDispatcher(@Value("${app.twilio.account-sid:}") String accountSid,
                                @Value("${app.twilio.auth-token:}") String authToken,
@@ -31,8 +31,15 @@ public class TwilioSmsDispatcher {
         this.customerLookup = customerLookup;
     }
 
+    @PostConstruct
+    void init() {
+        if (isConfigured()) {
+            Twilio.init(accountSid, authToken);
+        }
+    }
+
     public boolean send(Notification notification) {
-        if (accountSid.isBlank() || authToken.isBlank() || fromNumber.isBlank()) {
+        if (!isConfigured()) {
             log.info("Twilio not configured; skipping SMS for {}", notification.getId());
             return false;
         }
@@ -41,14 +48,13 @@ public class TwilioSmsDispatcher {
             log.warn("no phone on file for customer {}", notification.getCustomerId());
             return false;
         }
+        String body = buildBody(notification);
+        if (body.isBlank()) {
+            log.warn("empty SMS body for {}; skipping", notification.getId());
+            return false;
+        }
 
         try {
-            if (!initialized) {
-                Twilio.init(accountSid, authToken);
-                initialized = true;
-            }
-            String body = (notification.getSubject() == null ? "" : notification.getSubject() + ": ")
-                    + (notification.getBody() == null ? "" : notification.getBody());
             Message message = Message.creator(
                     new PhoneNumber(contact.phone()),
                     new PhoneNumber(fromNumber),
@@ -59,5 +65,22 @@ public class TwilioSmsDispatcher {
             log.warn("Twilio send failed: {}", ex.getMessage());
             return false;
         }
+    }
+
+    private boolean isConfigured() {
+        return accountSid != null && !accountSid.isBlank()
+                && authToken != null && !authToken.isBlank()
+                && fromNumber != null && !fromNumber.isBlank();
+    }
+
+    private static String buildBody(Notification notification) {
+        String subject = notification.getSubject();
+        String body = notification.getBody();
+        if (subject != null && !subject.isBlank() && body != null && !body.isBlank()) {
+            return subject + ": " + body;
+        }
+        if (subject != null && !subject.isBlank()) return subject;
+        if (body != null && !body.isBlank()) return body;
+        return "";
     }
 }

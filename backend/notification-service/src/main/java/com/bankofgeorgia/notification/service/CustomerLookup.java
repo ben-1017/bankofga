@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
+
 @Component
 public class CustomerLookup {
 
@@ -20,7 +22,10 @@ public class CustomerLookup {
 
     public CustomerLookup(RestTemplateBuilder builder,
                           @Value("${customer.service.url:http://localhost:8181}") String customerServiceUrl) {
-        this.restTemplate = builder.build();
+        this.restTemplate = builder
+                .setConnectTimeout(Duration.ofSeconds(2))
+                .setReadTimeout(Duration.ofSeconds(3))
+                .build();
         this.customerServiceUrl = customerServiceUrl;
     }
 
