@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { getErrorMessage } from '../api/client.js';
 import { listProducts, setProductStatus } from '../api/admin.js';
 import Alert from '../components/Alert.jsx';
+import { formatLabel, formatMoney } from '../utils/format.js';
 
 const PRODUCT_TYPES = [
   'CHECKING',
@@ -12,18 +13,9 @@ const PRODUCT_TYPES = [
   'STUDENT_SAVINGS',
 ];
 
-function formatMoney(value) {
-  const amount = Number(value ?? 0);
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-}
-
 function formatPercent(value) {
   const amount = Number(value ?? 0);
   return `${(amount * 100).toFixed(2)}%`;
-}
-
-function formatType(type) {
-  return type?.replaceAll('_', ' ') || 'Unknown';
 }
 
 export default function Products() {
@@ -166,7 +158,7 @@ export default function Products() {
             >
               <option value="ALL">All product types</option>
               {PRODUCT_TYPES.map((type) => (
-                <option key={type} value={type}>{formatType(type)}</option>
+                <option key={type} value={type}>{formatLabel(type)}</option>
               ))}
             </select>
           </label>
@@ -205,7 +197,7 @@ export default function Products() {
                       <div className="mt-1 max-w-md text-xs text-gray-500">{product.description}</div>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-gray-700">{formatType(product.type)}</td>
+                  <td className="px-4 py-4 text-gray-700">{formatLabel(product.type)}</td>
                   <td className="px-4 py-4 text-gray-700">{formatMoney(product.minimumBalance)}</td>
                   <td className="px-4 py-4 text-gray-700">{formatMoney(product.monthlyFee)}</td>
                   <td className="px-4 py-4 text-gray-700">{formatPercent(product.interestRate)}</td>
