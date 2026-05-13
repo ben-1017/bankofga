@@ -86,7 +86,7 @@
             }
           },
           "event": [
-            { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+            { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "const body = pm.response.json();", "pm.test('returns jwt', () => pm.expect(body.token).to.be.a('string'));", "pm.collectionVariables.set('customer_token', body.token);"] } }
           ]
         },
         {
@@ -177,7 +177,9 @@
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
                   "const b = pm.response.json();",
-                  "pm.test('returns id + email', () => { pm.expect(b.id).to.be.a('string'); pm.expect(b.email).to.eql('admin@bankofga.com'); });"
+                  "pm.test('returns id + email', () => { pm.expect(b.id).to.be.a('string'); pm.expect(b.email).to.eql('admin@bankofga.com'); });",
+                  "pm.test('returns jwt', () => pm.expect(b.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('admin_token', b.token);"
                 ]
               }
             }
@@ -926,7 +928,8 @@
           "name": "Gateway → customer-service: GET /api/customers/{id} — 200",
           "request": {
             "method": "GET",
-            "url": "{{gateway_host}}/api/customers/{{customer_id}}"
+            "url": "{{gateway_host}}/api/customers/{{customer_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}", "type": "text" }]
           },
           "event": [
             {
@@ -964,7 +967,8 @@
           "name": "Gateway → account-service: GET /api/accounts/{id} — 200",
           "request": {
             "method": "GET",
-            "url": "{{gateway_host}}/api/accounts/{{account_id}}"
+            "url": "{{gateway_host}}/api/accounts/{{account_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}", "type": "text" }]
           },
           "event": [
             {
@@ -983,7 +987,8 @@
           "name": "Gateway → transaction-service: GET /api/transactions/{id} — 200",
           "request": {
             "method": "GET",
-            "url": "{{gateway_host}}/api/transactions/{{transaction_id}}"
+            "url": "{{gateway_host}}/api/transactions/{{transaction_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}", "type": "text" }]
           },
           "event": [
             {
@@ -1002,7 +1007,8 @@
           "name": "Gateway → notification-service: GET /api/notifications/customer/{id} — 200",
           "request": {
             "method": "GET",
-            "url": "{{gateway_host}}/api/notifications/customer/{{customer_id}}"
+            "url": "{{gateway_host}}/api/notifications/customer/{{customer_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}", "type": "text" }]
           },
           "event": [
             {

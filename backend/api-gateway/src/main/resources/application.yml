@@ -45,6 +45,11 @@ spring:
           predicates:
             - Path=/api/notifications/**
 
+bankofga:
+  jwt:
+    issuer: bankofga
+    secret: ${BANKOFGA_JWT_SECRET:dev-bankofga-jwt-secret-change-me-at-least-32}
+
 management:
   endpoints:
     web:
