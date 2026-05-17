@@ -1,6 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function Home() {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return (
     <section style={{ textAlign: 'center', padding: '3rem 1rem' }}>
       <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Banking, simplified.</h1>
