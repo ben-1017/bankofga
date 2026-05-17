@@ -8,6 +8,12 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/bankofgeorgia
 
+bankofga:
+  jwt:
+    issuer: bankofga
+    secret: ${BANKOFGA_JWT_SECRET:dev-bankofga-jwt-secret-change-me-at-least-32}
+    expiration-minutes: ${BANKOFGA_JWT_EXPIRATION_MINUTES:120}
+
 logging:
   level:
     com.bankofgeorgia: DEBUG

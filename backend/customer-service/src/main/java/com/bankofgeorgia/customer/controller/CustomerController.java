@@ -4,6 +4,8 @@ import com.bankofgeorgia.customer.dto.CustomerResponse;
 import com.bankofgeorgia.customer.dto.LoginRequest;
 import com.bankofgeorgia.customer.dto.RegisterRequest;
 import com.bankofgeorgia.customer.dto.UpdateCustomerRequest;
+import com.bankofgeorgia.customer.model.Customer;
+import com.bankofgeorgia.customer.security.JwtService;
 import com.bankofgeorgia.customer.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,9 +17,11 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final JwtService jwtService;
 
-    public CustomerController(CustomerService customerService) {
+    public CustomerController(CustomerService customerService, JwtService jwtService) {
         this.customerService = customerService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -28,7 +32,8 @@ public class CustomerController {
 
     @PostMapping("/login")
     public ResponseEntity<CustomerResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(CustomerResponse.from(customerService.login(request)));
+        Customer customer = customerService.login(request);
+        return ResponseEntity.ok(CustomerResponse.from(customer, jwtService.issueCustomerToken(customer)));
     }
 
     @GetMapping("/{id}")

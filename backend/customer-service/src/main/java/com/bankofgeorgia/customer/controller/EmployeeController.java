@@ -3,6 +3,8 @@ package com.bankofgeorgia.customer.controller;
 import com.bankofgeorgia.customer.dto.CustomerResponse;
 import com.bankofgeorgia.customer.dto.EmployeeLoginRequest;
 import com.bankofgeorgia.customer.dto.EmployeeResponse;
+import com.bankofgeorgia.customer.model.Employee;
+import com.bankofgeorgia.customer.security.JwtService;
 import com.bankofgeorgia.customer.service.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +17,17 @@ import java.util.List;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final JwtService jwtService;
 
-    public EmployeeController(EmployeeService employeeService) {
+    public EmployeeController(EmployeeService employeeService, JwtService jwtService) {
         this.employeeService = employeeService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<EmployeeResponse> login(@Valid @RequestBody EmployeeLoginRequest request) {
-        return ResponseEntity.ok(EmployeeResponse.from(employeeService.login(request)));
+        Employee employee = employeeService.login(request);
+        return ResponseEntity.ok(EmployeeResponse.from(employee, jwtService.issueEmployeeToken(employee)));
     }
 
     @GetMapping("/customers")

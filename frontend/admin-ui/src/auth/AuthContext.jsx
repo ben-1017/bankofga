@@ -1,39 +1,28 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import { loginEmployee } from '../api/admin.js';
-
-const STORAGE_KEY = 'bankofga.admin.employee';
+import { clearStoredEmployee, loadStoredEmployee, storeEmployee } from './session.js';
 
 const AuthContext = createContext(null);
-
-function loadStoredEmployee() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    return null;
-  }
-}
 
 export function AuthProvider({ children }) {
   const [employee, setEmployee] = useState(loadStoredEmployee);
 
   async function login(credentials) {
     const nextEmployee = await loginEmployee(credentials);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextEmployee));
+    storeEmployee(nextEmployee);
     setEmployee(nextEmployee);
     return nextEmployee;
   }
 
   function logout() {
-    localStorage.removeItem(STORAGE_KEY);
+    clearStoredEmployee();
     setEmployee(null);
   }
 
   const value = useMemo(
     () => ({
       employee,
-      isAuthenticated: Boolean(employee?.id),
+      isAuthenticated: Boolean(employee?.id && employee?.token),
       login,
       logout,
     }),
