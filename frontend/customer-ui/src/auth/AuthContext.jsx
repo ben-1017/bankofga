@@ -32,9 +32,17 @@ export function AuthProvider({ children }) {
         return data;
       },
       async register(payload) {
-        const data = await customersApi.register(payload);
-        setCustomer(data);
-        return data;
+        const created = await customersApi.register(payload);
+        if (created?.token) {
+          setCustomer(created);
+          return created;
+        }
+        const authed = await customersApi.login({
+          username: payload.username,
+          password: payload.password,
+        });
+        setCustomer(authed);
+        return authed;
       },
       logout() {
         setCustomer(null);
