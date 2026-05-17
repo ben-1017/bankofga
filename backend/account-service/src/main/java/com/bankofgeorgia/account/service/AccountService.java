@@ -58,6 +58,16 @@ public class AccountService {
         return repository.findByCustomerId(customerId);
     }
 
+    /**
+     * Accounts eligible for the monthly maintenance fee: ACTIVE accounts whose
+     * current balance is below the supplied threshold. Note: the data model has
+     * no daily-balance history or product-type, so this uses current balance as
+     * a pragmatic stand-in for "daily balance below the fee threshold".
+     */
+    public List<Account> findFeeEligible(BigDecimal balanceThreshold) {
+        return repository.findByStatusAndBalanceLessThan(AccountStatus.ACTIVE, balanceThreshold);
+    }
+
     public Account updateBalance(String id, BalanceUpdateRequest request) {
         if (request.delta().signum() == 0) {
             throw new IllegalArgumentException("delta must be non-zero");

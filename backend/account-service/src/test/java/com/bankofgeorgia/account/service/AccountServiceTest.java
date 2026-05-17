@@ -139,6 +139,29 @@ class AccountServiceTest {
     }
 
     @Test
+    void findFeeEligible_returnsActiveAccountsBelowThreshold() {
+        BigDecimal threshold = new BigDecimal("100.00");
+        Account low = activeAccount("acc-low", new BigDecimal("12.00"));
+        low.setCustomerId("cust-1");
+        when(repository.findByStatusAndBalanceLessThan(AccountStatus.ACTIVE, threshold))
+                .thenReturn(List.of(low));
+
+        List<Account> result = accountService.findFeeEligible(threshold);
+
+        assertThat(result).extracting(Account::getId).containsExactly("acc-low");
+        assertThat(result).extracting(Account::getCustomerId).containsExactly("cust-1");
+    }
+
+    @Test
+    void findFeeEligible_returnsEmpty_whenNoAccountsBelowThreshold() {
+        BigDecimal threshold = new BigDecimal("100.00");
+        when(repository.findByStatusAndBalanceLessThan(AccountStatus.ACTIVE, threshold))
+                .thenReturn(List.of());
+
+        assertThat(accountService.findFeeEligible(threshold)).isEmpty();
+    }
+
+    @Test
     void updateBalance_throwsAccountNotActive_whenClosed() {
         Account account = activeAccount("acc-1", new BigDecimal("100"));
         account.setStatus(AccountStatus.CLOSED);

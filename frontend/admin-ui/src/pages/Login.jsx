@@ -7,7 +7,7 @@ import Alert from '../components/Alert.jsx';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, login } = useAuth();
+  const { authNotice, clearAuthNotice, isAuthenticated, login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,6 +27,7 @@ export default function Login() {
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
+    clearAuthNotice();
     setIsSubmitting(true);
 
     try {
@@ -54,6 +55,14 @@ export default function Login() {
           <div className="mb-5">
             <Alert variant="error" title="Unable to sign in">
               {error}
+            </Alert>
+          </div>
+        )}
+
+        {authNotice && !error && (
+          <div className="mb-5">
+            <Alert variant="warning" title="Session ended" onDismiss={clearAuthNotice}>
+              {authNotice}
             </Alert>
           </div>
         )}

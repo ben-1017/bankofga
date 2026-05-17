@@ -5,11 +5,13 @@ import com.bankofgeorgia.product.dto.UpdateProductRequest;
 import com.bankofgeorgia.product.exception.DuplicateProductException;
 import com.bankofgeorgia.product.exception.ProductNotFoundException;
 import com.bankofgeorgia.product.model.Product;
+import com.bankofgeorgia.product.model.ProductType;
 import com.bankofgeorgia.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ProductService {
@@ -21,15 +23,20 @@ public class ProductService {
     }
 
     public Product create(CreateProductRequest request) {
-        if (repository.existsByCode(request.code())) {
+        String code = normalizeCode(request.code());
+        String name = normalizeText(request.name());
+        ProductType type = request.type();
+
+        if (repository.existsByCodeIgnoreCase(code)) {
             throw new DuplicateProductException("product code already exists");
         }
+        ensureProductNameAvailable(name, type, null);
 
         Product product = new Product();
-        product.setCode(request.code());
-        product.setType(request.type());
-        product.setName(request.name());
-        product.setDescription(request.description());
+        product.setCode(code);
+        product.setType(type);
+        product.setName(name);
+        product.setDescription(normalizeNullableText(request.description()));
         product.setMinimumBalance(request.minimumBalance());
         product.setMonthlyFee(request.monthlyFee());
         product.setInterestRate(request.interestRate());
@@ -53,9 +60,13 @@ public class ProductService {
         Product product = repository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("product not found: " + id));
 
-        product.setType(request.type());
-        product.setName(request.name());
-        product.setDescription(request.description());
+        String name = normalizeText(request.name());
+        ProductType type = request.type();
+        ensureProductNameAvailable(name, type, id);
+
+        product.setType(type);
+        product.setName(name);
+        product.setDescription(normalizeNullableText(request.description()));
         product.setMinimumBalance(request.minimumBalance());
         product.setMonthlyFee(request.monthlyFee());
         product.setInterestRate(request.interestRate());
@@ -70,5 +81,26 @@ public class ProductService {
         product.setActive(active);
         product.setUpdatedAt(Instant.now());
         return repository.save(product);
+    }
+
+    private void ensureProductNameAvailable(String name, ProductType type, String currentProductId) {
+        repository.findFirstByNameIgnoreCaseAndType(name, type)
+                .filter(existing -> !Objects.equals(existing.getId(), currentProductId))
+                .ifPresent(existing -> {
+                    throw new DuplicateProductException("product name already exists for this type");
+                });
+    }
+
+    private String normalizeCode(String value) {
+        return normalizeText(value).toUpperCase();
+    }
+
+    private String normalizeText(String value) {
+        return value == null ? null : value.trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizeNullableText(String value) {
+        String normalized = normalizeText(value);
+        return normalized == null || normalized.isBlank() ? null : normalized;
     }
 }

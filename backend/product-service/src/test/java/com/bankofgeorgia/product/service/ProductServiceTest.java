@@ -32,10 +32,12 @@ class ProductServiceTest {
     @Test
     void create_persistsProduct_andDefaultsActiveTrueWithTimestamps() {
         CreateProductRequest req = new CreateProductRequest(
-                "CHK-STD", ProductType.CHECKING, "Standard Checking",
-                "No-frills checking", new BigDecimal("100"), new BigDecimal("5"), BigDecimal.ZERO
+                " chk-std ", ProductType.CHECKING, " Standard Checking ",
+                " No-frills checking ", new BigDecimal("100"), new BigDecimal("5"), BigDecimal.ZERO
         );
-        when(repository.existsByCode("CHK-STD")).thenReturn(false);
+        when(repository.existsByCodeIgnoreCase("CHK-STD")).thenReturn(false);
+        when(repository.findFirstByNameIgnoreCaseAndType("Standard Checking", ProductType.CHECKING))
+                .thenReturn(Optional.empty());
         when(repository.save(any(Product.class))).thenAnswer(inv -> {
             Product p = inv.getArgument(0);
             p.setId("new-id");
@@ -49,6 +51,8 @@ class ProductServiceTest {
         Product sent = captor.getValue();
         assertThat(sent.getCode()).isEqualTo("CHK-STD");
         assertThat(sent.getType()).isEqualTo(ProductType.CHECKING);
+        assertThat(sent.getName()).isEqualTo("Standard Checking");
+        assertThat(sent.getDescription()).isEqualTo("No-frills checking");
         assertThat(sent.isActive()).isTrue();
         assertThat(sent.getCreatedAt()).isNotNull();
         assertThat(sent.getUpdatedAt()).isNotNull();
@@ -61,11 +65,31 @@ class ProductServiceTest {
                 "CHK-STD", ProductType.CHECKING, "Standard Checking",
                 null, new BigDecimal("100"), new BigDecimal("5"), BigDecimal.ZERO
         );
-        when(repository.existsByCode("CHK-STD")).thenReturn(true);
+        when(repository.existsByCodeIgnoreCase("CHK-STD")).thenReturn(true);
 
         assertThatThrownBy(() -> productService.create(req))
                 .isInstanceOf(DuplicateProductException.class)
                 .hasMessage("product code already exists");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void create_throwsDuplicate_whenNameAlreadyExistsForType() {
+        CreateProductRequest req = new CreateProductRequest(
+                "CHK-PREM", ProductType.CHECKING, "Premium Checking",
+                null, new BigDecimal("100"), new BigDecimal("5"), BigDecimal.ZERO
+        );
+        Product existing = new Product();
+        existing.setId("p-existing");
+
+        when(repository.existsByCodeIgnoreCase("CHK-PREM")).thenReturn(false);
+        when(repository.findFirstByNameIgnoreCaseAndType("Premium Checking", ProductType.CHECKING))
+                .thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> productService.create(req))
+                .isInstanceOf(DuplicateProductException.class)
+                .hasMessage("product name already exists for this type");
 
         verify(repository, never()).save(any());
     }
@@ -84,10 +108,12 @@ class ProductServiceTest {
         existing.setUpdatedAt(originalUpdatedAt);
 
         UpdateProductRequest req = new UpdateProductRequest(
-                ProductType.SAVINGS, "New Name", "updated description",
+                ProductType.SAVINGS, " New Name ", " updated description ",
                 new BigDecimal("250"), new BigDecimal("0"), new BigDecimal("0.025")
         );
         when(repository.findById("p-1")).thenReturn(Optional.of(existing));
+        when(repository.findFirstByNameIgnoreCaseAndType("New Name", ProductType.SAVINGS))
+                .thenReturn(Optional.empty());
         when(repository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Product result = productService.update("p-1", req);
@@ -114,6 +140,54 @@ class ProductServiceTest {
         assertThatThrownBy(() -> productService.update("missing", req))
                 .isInstanceOf(ProductNotFoundException.class)
                 .hasMessageContaining("missing");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void update_allowsSameProductNameForCurrentProduct() {
+        Product existing = new Product();
+        existing.setId("p-1");
+        existing.setType(ProductType.CHECKING);
+        existing.setName("Standard Checking");
+        existing.setUpdatedAt(Instant.parse("2026-04-10T00:00:00Z"));
+
+        UpdateProductRequest req = new UpdateProductRequest(
+                ProductType.CHECKING, "Standard Checking", null,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO
+        );
+        when(repository.findById("p-1")).thenReturn(Optional.of(existing));
+        when(repository.findFirstByNameIgnoreCaseAndType("Standard Checking", ProductType.CHECKING))
+                .thenReturn(Optional.of(existing));
+        when(repository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Product result = productService.update("p-1", req);
+
+        assertThat(result.getName()).isEqualTo("Standard Checking");
+        verify(repository).save(existing);
+    }
+
+    @Test
+    void update_throwsDuplicate_whenNameBelongsToAnotherProductOfSameType() {
+        Product existing = new Product();
+        existing.setId("p-1");
+        existing.setType(ProductType.CHECKING);
+        existing.setName("Standard Checking");
+
+        Product other = new Product();
+        other.setId("p-2");
+
+        UpdateProductRequest req = new UpdateProductRequest(
+                ProductType.CHECKING, "Premium Checking", null,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO
+        );
+        when(repository.findById("p-1")).thenReturn(Optional.of(existing));
+        when(repository.findFirstByNameIgnoreCaseAndType("Premium Checking", ProductType.CHECKING))
+                .thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> productService.update("p-1", req))
+                .isInstanceOf(DuplicateProductException.class)
+                .hasMessage("product name already exists for this type");
 
         verify(repository, never()).save(any());
     }
