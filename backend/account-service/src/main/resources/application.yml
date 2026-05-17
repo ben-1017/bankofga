@@ -8,6 +8,12 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/bankofgeorgia
 
+app:
+  fee:
+    # Minimum balance below which an ACTIVE account is subject to the monthly
+    # maintenance fee. Consumed by GET /api/accounts/internal/fee-eligible.
+    balance-threshold: ${FEE_BALANCE_THRESHOLD:100.00}
+
 logging:
   level:
     com.bankofgeorgia: DEBUG

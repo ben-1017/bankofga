@@ -94,6 +94,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String path = request.getURI().getPath();
         HttpMethod method = request.getMethod();
 
+        // Service-to-service endpoints (e.g. /api/accounts/internal/fee-eligible) are
+        // never legitimately proxied through the gateway — callers reach the owning
+        // service directly. Reject for every role, including EMPLOYEE.
+        if (path.contains("/internal/")) {
+            return false;
+        }
+
         if ("EMPLOYEE".equals(principal.role())) {
             return true;
         }
@@ -118,6 +125,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         if (path.startsWith("/api/customers/")) {
             String customerId = path.substring("/api/customers/".length());
             return principal.subject().equals(customerId);
+        }
+
+        if (path.startsWith("/api/notifications/customer/") && HttpMethod.GET.equals(method)) {
+            String customerId = path.substring("/api/notifications/customer/".length());
+            return principal.subject().equals(customerId);
+        }
+
+        if (path.startsWith("/api/notifications")) {
+            return false;
         }
 
         return "CUSTOMER".equals(principal.role());

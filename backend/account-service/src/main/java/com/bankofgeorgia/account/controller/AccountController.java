@@ -2,15 +2,18 @@ package com.bankofgeorgia.account.controller;
 
 import com.bankofgeorgia.account.dto.AccountResponse;
 import com.bankofgeorgia.account.dto.BalanceUpdateRequest;
+import com.bankofgeorgia.account.dto.FeeEligibleAccount;
 import com.bankofgeorgia.account.dto.OpenAccountRequest;
 import com.bankofgeorgia.account.service.AccountService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -18,9 +21,12 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
+    private final BigDecimal feeBalanceThreshold;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService,
+                             @Value("${app.fee.balance-threshold:100.00}") BigDecimal feeBalanceThreshold) {
         this.accountService = accountService;
+        this.feeBalanceThreshold = feeBalanceThreshold;
     }
 
     @PostMapping
@@ -47,6 +53,16 @@ public class AccountController {
             @RequestParam(defaultValue = "20") int size) {
         Page<AccountResponse> result = accountService.findAll(PageRequest.of(page, size))
                 .map(AccountResponse::from);
+        return ResponseEntity.ok(result);
+    }
+
+    // Service-to-service only (scheduler-service monthly fee job). The API gateway
+    // blocks any /api/**/internal/** path, so this is not reachable by external clients.
+    @GetMapping("/internal/fee-eligible")
+    public ResponseEntity<List<FeeEligibleAccount>> feeEligible() {
+        List<FeeEligibleAccount> result = accountService.findFeeEligible(feeBalanceThreshold).stream()
+                .map(FeeEligibleAccount::from)
+                .toList();
         return ResponseEntity.ok(result);
     }
 
