@@ -1,7 +1,10 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import ComingSoon from './pages/ComingSoon.jsx';
+import AccountDetail from './pages/AccountDetail.jsx';
+import Accounts from './pages/Accounts.jsx';
+import CustomerDetail from './pages/CustomerDetail.jsx';
+import Customers from './pages/Customers.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import ProductForm from './pages/ProductForm.jsx';
@@ -24,24 +27,10 @@ export const router = createBrowserRouter([
       { path: 'products', element: <Products /> },
       { path: 'products/new', element: <ProductForm /> },
       { path: 'products/:id/edit', element: <ProductForm /> },
-      {
-        path: 'customers',
-        element: (
-          <ComingSoon
-            title="Customers"
-            description="Customer directory and profile views come next in the admin sprint."
-          />
-        ),
-      },
-      {
-        path: 'accounts',
-        element: (
-          <ComingSoon
-            title="Accounts"
-            description="Account list, account detail, and transaction history follow the customer directory."
-          />
-        ),
-      },
+      { path: 'customers', element: <Customers /> },
+      { path: 'customers/:id', element: <CustomerDetail /> },
+      { path: 'accounts', element: <Accounts /> },
+      { path: 'accounts/:id', element: <AccountDetail /> },
     ],
   },
 ]);

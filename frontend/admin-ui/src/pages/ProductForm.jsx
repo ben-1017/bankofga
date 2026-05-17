@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { createProduct, getProduct, updateProduct } from '../api/admin.js';
 import { getErrorMessage } from '../api/client.js';
 import Alert from '../components/Alert.jsx';
+import { formatLabel } from '../utils/format.js';
 
 const PRODUCT_TYPES = [
   'CHECKING',
@@ -21,10 +22,6 @@ const INITIAL_FORM = {
   monthlyFee: '0',
   interestRate: '0',
 };
-
-function formatType(type) {
-  return type.replaceAll('_', ' ');
-}
 
 function toNumber(value) {
   return Number(value === '' ? 0 : value);
@@ -181,7 +178,7 @@ export default function ProductForm() {
                 required
               >
                 {PRODUCT_TYPES.map((type) => (
-                  <option key={type} value={type}>{formatType(type)}</option>
+                  <option key={type} value={type}>{formatLabel(type)}</option>
                 ))}
               </select>
             </label>
