@@ -6,8 +6,11 @@ import com.bankofgeorgia.account.exception.AccountNotActiveException;
 import com.bankofgeorgia.account.exception.AccountNotFoundException;
 import com.bankofgeorgia.account.exception.InsufficientFundsException;
 import com.bankofgeorgia.account.model.Account;
+import com.bankofgeorgia.account.event.LowBalanceEvent;
+import com.bankofgeorgia.account.event.LowBalanceEventPublisher;
 import com.bankofgeorgia.account.model.AccountStatus;
 import com.bankofgeorgia.account.repository.AccountRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,9 +25,15 @@ import java.util.UUID;
 public class AccountService {
 
     private final AccountRepository repository;
+    private final LowBalanceEventPublisher lowBalanceEventPublisher;
+    private final BigDecimal lowBalanceThreshold;
 
-    public AccountService(AccountRepository repository) {
+    public AccountService(AccountRepository repository,
+                          LowBalanceEventPublisher lowBalanceEventPublisher,
+                          @Value("${app.fee.balance-threshold:100.00}") BigDecimal lowBalanceThreshold) {
         this.repository = repository;
+        this.lowBalanceEventPublisher = lowBalanceEventPublisher;
+        this.lowBalanceThreshold = lowBalanceThreshold;
     }
 
     public Account open(OpenAccountRequest request) {
@@ -79,12 +88,23 @@ public class AccountService {
             throw new AccountNotActiveException("account is not active");
         }
 
-        BigDecimal newBalance = account.getBalance().add(request.delta());
+        BigDecimal oldBalance = account.getBalance();
+        BigDecimal newBalance = oldBalance.add(request.delta());
         if (newBalance.signum() < 0) {
             throw new InsufficientFundsException("insufficient funds");
         }
 
         account.setBalance(newBalance);
-        return repository.save(account);
+        Account saved = repository.save(account);
+
+        // Alert once, only when the balance crosses from at/above the threshold
+        // to below it — avoids re-alerting on every further sub-threshold debit.
+        if (oldBalance.compareTo(lowBalanceThreshold) >= 0
+                && newBalance.compareTo(lowBalanceThreshold) < 0) {
+            lowBalanceEventPublisher.publish(new LowBalanceEvent(
+                    saved.getId(), saved.getCustomerId(), newBalance,
+                    lowBalanceThreshold, Instant.now()));
+        }
+        return saved;
     }
 }
