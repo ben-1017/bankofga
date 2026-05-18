@@ -16,7 +16,6 @@ and event streaming, and the whole stack runs under Docker.
 bank-of-georgia/
 ├── backend/
 │   ├── api-gateway/          # Edge routing, auth
-│   ├── discovery-service/    # Service registry (Eureka)
 │   ├── customer-service/     # Registration, login, profile
 │   ├── product-service/      # Banking product catalog
 │   ├── account-service/      # Customer accounts, balances
