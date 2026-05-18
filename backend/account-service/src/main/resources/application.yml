@@ -7,12 +7,21 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/bankofgeorgia
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 app:
   fee:
     # Minimum balance below which an ACTIVE account is subject to the monthly
-    # maintenance fee. Consumed by GET /api/accounts/internal/fee-eligible.
+    # maintenance fee. Consumed by GET /api/accounts/internal/fee-eligible, and
+    # the threshold for the low-balance alert below.
     balance-threshold: ${FEE_BALANCE_THRESHOLD:100.00}
+  topics:
+    # Consumed by notification-service NotificationListener.onLowBalance.
+    low-balance: LOW_MAINTENANCE_NOTIFICATION_EVENT
 
 logging:
   level:

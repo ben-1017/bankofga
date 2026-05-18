@@ -2,15 +2,18 @@ package com.bankofgeorgia.account.service;
 
 import com.bankofgeorgia.account.dto.BalanceUpdateRequest;
 import com.bankofgeorgia.account.dto.OpenAccountRequest;
+import com.bankofgeorgia.account.event.LowBalanceEvent;
+import com.bankofgeorgia.account.event.LowBalanceEventPublisher;
 import com.bankofgeorgia.account.exception.AccountNotActiveException;
 import com.bankofgeorgia.account.exception.AccountNotFoundException;
 import com.bankofgeorgia.account.exception.InsufficientFundsException;
 import com.bankofgeorgia.account.model.Account;
 import com.bankofgeorgia.account.model.AccountStatus;
 import com.bankofgeorgia.account.repository.AccountRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,13 +24,23 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
 
+    private static final BigDecimal THRESHOLD = new BigDecimal("100.00");
+
     @Mock private AccountRepository repository;
-    @InjectMocks private AccountService accountService;
+    @Mock private LowBalanceEventPublisher lowBalanceEventPublisher;
+    private AccountService accountService;
+
+    @BeforeEach
+    void setUp() {
+        accountService = new AccountService(repository, lowBalanceEventPublisher, THRESHOLD);
+    }
 
     private Account activeAccount(String id, BigDecimal balance) {
         Account a = new Account();
@@ -169,5 +182,46 @@ class AccountServiceTest {
 
         assertThatThrownBy(() -> accountService.updateBalance("acc-1", new BalanceUpdateRequest(new BigDecimal("10"))))
                 .isInstanceOf(AccountNotActiveException.class);
+    }
+
+    @Test
+    void updateBalance_publishesLowBalanceEvent_whenCrossingBelowThreshold() {
+        Account account = activeAccount("acc-1", new BigDecimal("150.00"));
+        account.setCustomerId("cust-1");
+        when(repository.findById("acc-1")).thenReturn(Optional.of(account));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        accountService.updateBalance("acc-1", new BalanceUpdateRequest(new BigDecimal("-70.00")));
+
+        ArgumentCaptor<LowBalanceEvent> captor = ArgumentCaptor.forClass(LowBalanceEvent.class);
+        verify(lowBalanceEventPublisher).publish(captor.capture());
+        LowBalanceEvent event = captor.getValue();
+        assertThat(event.accountId()).isEqualTo("acc-1");
+        assertThat(event.customerId()).isEqualTo("cust-1");
+        assertThat(event.balance()).isEqualByComparingTo("80.00");
+        assertThat(event.threshold()).isEqualByComparingTo(THRESHOLD);
+        assertThat(event.occurredAt()).isNotNull();
+    }
+
+    @Test
+    void updateBalance_doesNotPublish_whenBalanceStaysAtOrAboveThreshold() {
+        Account account = activeAccount("acc-1", new BigDecimal("200.00"));
+        when(repository.findById("acc-1")).thenReturn(Optional.of(account));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        accountService.updateBalance("acc-1", new BalanceUpdateRequest(new BigDecimal("50.00")));
+
+        verify(lowBalanceEventPublisher, never()).publish(any());
+    }
+
+    @Test
+    void updateBalance_doesNotPublish_whenAlreadyBelowThreshold() {
+        Account account = activeAccount("acc-1", new BigDecimal("80.00"));
+        when(repository.findById("acc-1")).thenReturn(Optional.of(account));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        accountService.updateBalance("acc-1", new BalanceUpdateRequest(new BigDecimal("-10.00")));
+
+        verify(lowBalanceEventPublisher, never()).publish(any());
     }
 }
