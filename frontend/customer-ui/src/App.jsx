@@ -30,7 +30,8 @@ export default function App() {
             <>
               <Link to="/dashboard" style={{ color: '#fff' }}>Dashboard</Link>
               <Link to="/accounts" style={{ color: '#fff' }}>Accounts</Link>
-              <span style={{ opacity: 0.8 }}>Hi, {customer.name?.split(' ')[0]}</span>
+              <Link to="/notifications" style={{ color: '#fff' }}>Notifications</Link>
+              <Link to="/profile" style={{ color: '#fff' }}>Hi, {customer.name?.split(' ')[0]}</Link>
               <button
                 onClick={handleLogout}
                 style={{

@@ -63,6 +63,24 @@ export default function AccountDetail() {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+        <Link
+          to={`/accounts/${account.id}/deposit`}
+          style={{ ...actionPrimary, pointerEvents: account.status === 'ACTIVE' ? 'auto' : 'none', opacity: account.status === 'ACTIVE' ? 1 : 0.5 }}
+        >
+          Deposit
+        </Link>
+        <Link
+          to={`/accounts/${account.id}/withdraw`}
+          style={{ ...actionSecondary, pointerEvents: account.status === 'ACTIVE' ? 'auto' : 'none', opacity: account.status === 'ACTIVE' ? 1 : 0.5 }}
+        >
+          Withdraw
+        </Link>
+        <Link to={`/accounts/${account.id}/transactions`} style={actionSecondary}>
+          Transaction history
+        </Link>
+      </div>
+
       <dl style={{ background: '#fff', padding: '1rem 1.5rem', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
         <Row label="Account ID" value={account.id} />
         <Row label="Product" value={product ? `${product.name} (${product.code})` : account.productId} />
@@ -71,6 +89,27 @@ export default function AccountDetail() {
     </section>
   );
 }
+
+const actionPrimary = {
+  display: 'inline-block',
+  padding: '0.55rem 1.1rem',
+  background: '#1f6feb',
+  color: '#fff',
+  borderRadius: 6,
+  fontWeight: 600,
+  textDecoration: 'none',
+};
+
+const actionSecondary = {
+  display: 'inline-block',
+  padding: '0.55rem 1.1rem',
+  background: '#fff',
+  color: '#1f2933',
+  border: '1px solid #c2cad6',
+  borderRadius: 6,
+  fontWeight: 600,
+  textDecoration: 'none',
+};
 
 function Row({ label, value }) {
   return (
