@@ -7,6 +7,9 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/bankofgeorgia
+      # Build @Indexed / @CompoundIndex constraints (incl. the unique code and
+      # name+type indexes). Off by default in Spring Data Mongo 3+.
+      auto-index-creation: true
 
 logging:
   level:
