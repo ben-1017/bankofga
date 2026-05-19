@@ -116,6 +116,62 @@ npm install
 npm run dev
 ```
 
+## User Testing (Sprint 4) — APIs via Docker + Postman
+
+For another team to test the system end-to-end. Everything runs as Docker
+containers behind the API gateway; all calls are JWT-authenticated.
+
+**1. Get the latest code**
+
+```bash
+git checkout development && git pull
+```
+
+**2. Bring the whole backend up as containers**
+
+```bash
+cd infra/docker
+docker compose up -d --build      # builds + starts all 7 services + Mongo/Kafka/Redis
+```
+
+Give it ~1–2 min. Readiness check (any HTTP code = serving):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/products   # 200 when ready
+```
+
+**3. Drive the APIs — Postman collection**
+
+Import **`docs/BankOfGA-Sprint4.postman_collection.json`** into Postman and
+**Run collection** (or use the CLI below). It is rerunnable — each run
+registers a fresh customer via a timestamp — and covers, through the gateway
+(`http://localhost:8080`) with JWT:
+
+- Auth (customer register/login, employee login — tokens captured automatically)
+- Products (employee CRUD, incl. the duplicate-rejected 409 check)
+- Accounts (open, get, list-by-customer)
+- Transactions (deposit, withdraw, history; one withdrawal trips the low-balance alert)
+- Notifications (Kafka-driven; arrive asynchronously)
+- Security negatives (no-token → 401, customer-list-all → 403, `/internal/` blocked)
+
+CLI alternative (no Postman UI needed):
+
+```bash
+./infra/integration-tests/node_modules/.bin/newman run docs/BankOfGA-Sprint4.postman_collection.json
+```
+
+Seeded employee logins: `admin@bankofga.com / admin123`,
+`quincy@bankofga.com / demo123`, `ben@bankofga.com / demo123`.
+
+**4. Optional — the web UIs** (run as Vite dev servers, not containers)
+
+```bash
+cd frontend/admin-ui    && npm install && npm run dev   # http://localhost:3001  (employee login)
+cd frontend/customer-ui && npm install && npm run dev   # http://localhost:3000  (register a customer)
+```
+
+**Tear down:** `cd infra/docker && docker compose down` (add `-v` to also wipe data).
+
 ## Non-Functional Requirements
 
 - Passwords are hashed (BCrypt) before storage
