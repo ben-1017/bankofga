@@ -25,17 +25,20 @@ public class CustomerService {
     }
 
     public Customer register(RegisterRequest request) {
-        if (repository.existsByUsername(request.username())) {
+        String username = normalize(request.username());
+        String email = normalize(request.email());
+
+        if (repository.existsByUsername(username)) {
             throw new DuplicateCustomerException("username already taken");
         }
-        if (repository.existsByEmail(request.email())) {
+        if (repository.existsByEmail(email)) {
             throw new DuplicateCustomerException("email already registered");
         }
 
         Customer customer = new Customer();
         customer.setName(request.name());
-        customer.setEmail(request.email());
-        customer.setUsername(request.username());
+        customer.setEmail(email);
+        customer.setUsername(username);
         customer.setPhone(request.phone());
         customer.setPasswordHash(passwordEncoder.encode(request.password()));
         customer.setCreatedAt(Instant.now());
@@ -43,7 +46,7 @@ public class CustomerService {
     }
 
     public Customer login(LoginRequest request) {
-        Customer customer = repository.findByUsername(request.username())
+        Customer customer = repository.findByUsername(normalize(request.username()))
                 .orElseThrow(() -> new AuthException("invalid credentials"));
         if (!passwordEncoder.matches(request.password(), customer.getPasswordHash())) {
             throw new AuthException("invalid credentials");
@@ -60,8 +63,12 @@ public class CustomerService {
         Customer customer = repository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException("customer not found"));
         if (request.name() != null) customer.setName(request.name());
-        if (request.email() != null) customer.setEmail(request.email());
+        if (request.email() != null) customer.setEmail(normalize(request.email()));
         if (request.phone() != null) customer.setPhone(request.phone());
         return repository.save(customer);
+    }
+
+    private static String normalize(String value) {
+        return value == null ? null : value.trim().toLowerCase();
     }
 }
