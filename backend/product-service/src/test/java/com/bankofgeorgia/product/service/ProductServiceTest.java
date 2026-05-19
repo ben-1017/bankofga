@@ -60,6 +60,23 @@ class ProductServiceTest {
     }
 
     @Test
+    void create_translatesDbDuplicateKeyToConflict() {
+        CreateProductRequest req = new CreateProductRequest(
+                "CHK-STD", ProductType.CHECKING, "Standard Checking",
+                null, new BigDecimal("100"), new BigDecimal("5"), BigDecimal.ZERO
+        );
+        when(repository.existsByCodeIgnoreCase("CHK-STD")).thenReturn(false);
+        when(repository.findFirstByNameIgnoreCaseAndType("Standard Checking", ProductType.CHECKING))
+                .thenReturn(Optional.empty());
+        when(repository.save(any(Product.class)))
+                .thenThrow(new org.springframework.dao.DuplicateKeyException("E11000 duplicate key"));
+
+        // DB unique-index backstop must surface as a domain 409, not a 500.
+        assertThatThrownBy(() -> productService.create(req))
+                .isInstanceOf(DuplicateProductException.class);
+    }
+
+    @Test
     void create_throwsDuplicate_whenCodeExists() {
         CreateProductRequest req = new CreateProductRequest(
                 "CHK-STD", ProductType.CHECKING, "Standard Checking",

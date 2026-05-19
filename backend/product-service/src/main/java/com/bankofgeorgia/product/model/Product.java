@@ -1,6 +1,7 @@
 package com.bankofgeorgia.product.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -8,6 +9,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Document("products")
+// Data-layer backstop for the app-level name+type dedup: a product name must be
+// unique within a product type. Prevents stale-data / race / direct-write dupes.
+@CompoundIndex(name = "uniq_name_type", def = "{'name': 1, 'type': 1}", unique = true)
 public class Product {
 
     @Id

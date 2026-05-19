@@ -7,6 +7,7 @@ import com.bankofgeorgia.product.exception.ProductNotFoundException;
 import com.bankofgeorgia.product.model.Product;
 import com.bankofgeorgia.product.model.ProductType;
 import com.bankofgeorgia.product.repository.ProductRepository;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -44,7 +45,7 @@ public class ProductService {
         Instant now = Instant.now();
         product.setCreatedAt(now);
         product.setUpdatedAt(now);
-        return repository.save(product);
+        return save(product);
     }
 
     public List<Product> findAll() {
@@ -71,7 +72,17 @@ public class ProductService {
         product.setMonthlyFee(request.monthlyFee());
         product.setInterestRate(request.interestRate());
         product.setUpdatedAt(Instant.now());
-        return repository.save(product);
+        return save(product);
+    }
+
+    private Product save(Product product) {
+        try {
+            return repository.save(product);
+        } catch (DuplicateKeyException ex) {
+            // DB unique-index backstop fired (race, or a write that bypassed the
+            // app-level check) — surface as a clean 409 rather than a 500.
+            throw new DuplicateProductException("product code or name already exists for this type");
+        }
     }
 
     public Product setActive(String id, boolean active) {

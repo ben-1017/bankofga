@@ -1,5 +1,6 @@
 package com.bankofgeorgia.product.exception;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,6 +23,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ProductNotFoundException ex) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // Backstop: a unique-index violation not already translated by the service.
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateKey(DuplicateKeyException ex) {
+        return build(HttpStatus.CONFLICT, "product code or name already exists for this type");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
