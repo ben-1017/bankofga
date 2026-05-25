@@ -68,10 +68,8 @@ public class AccountService {
     }
 
     /**
-     * Accounts eligible for the monthly maintenance fee: ACTIVE accounts whose
-     * current balance is below the supplied threshold. Note: the data model has
-     * no daily-balance history or product-type, so this uses current balance as
-     * a pragmatic stand-in for "daily balance below the fee threshold".
+     * ACTIVE accounts whose current balance is below the supplied threshold.
+     * Scheduler-service performs the product-type check before applying fees.
      */
     public List<Account> findFeeEligible(BigDecimal balanceThreshold) {
         return repository.findByStatusAndBalanceLessThan(AccountStatus.ACTIVE, balanceThreshold);

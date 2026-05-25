@@ -30,6 +30,7 @@ class AccountControllerTest {
         Account a = new Account();
         a.setId(id);
         a.setCustomerId(customerId);
+        a.setProductId("prod-" + id);
         a.setBalance(new BigDecimal(balance));
         a.setStatus(AccountStatus.ACTIVE);
         return a;
@@ -46,8 +47,8 @@ class AccountControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsExactly(
-                new FeeEligibleAccount("acc-1", "cust-1"),
-                new FeeEligibleAccount("acc-2", "cust-2"));
+                new FeeEligibleAccount("acc-1", "cust-1", "prod-acc-1"),
+                new FeeEligibleAccount("acc-2", "cust-2", "prod-acc-2"));
 
         ArgumentCaptor<BigDecimal> thresholdCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         org.mockito.Mockito.verify(accountService).findFeeEligible(thresholdCaptor.capture());

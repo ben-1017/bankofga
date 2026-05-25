@@ -13,11 +13,13 @@ set -euo pipefail
 # Format: "<name>:<port>" — kept as a flat list so this works on macOS
 # bash 3.2 (no associative arrays).
 SERVICES=(
+  "gateway:8080"
   "customer:8181"
   "product:8082"
   "account:8083"
   "transaction:8084"
   "notification:8085"
+  "scheduler:8086"
 )
 
 HOST="${BOG_TEST_HOST:-localhost}"

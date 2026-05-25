@@ -3,7 +3,6 @@ package com.bankofgeorgia.notification.service;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
 import com.sendgrid.Response;
-import com.sendgrid.SendGrid;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
@@ -23,13 +22,16 @@ public class SendGridEmailDispatcher {
     private final String apiKey;
     private final String fromAddress;
     private final CustomerLookup customerLookup;
+    private final SendGridClient sendGridClient;
 
     public SendGridEmailDispatcher(@Value("${app.sendgrid.api-key:}") String apiKey,
                                    @Value("${app.sendgrid.from:no-reply@bankofgeorgia.dev}") String fromAddress,
-                                   CustomerLookup customerLookup) {
+                                   CustomerLookup customerLookup,
+                                   SendGridClient sendGridClient) {
         this.apiKey = apiKey;
         this.fromAddress = fromAddress;
         this.customerLookup = customerLookup;
+        this.sendGridClient = sendGridClient;
     }
 
     public boolean send(Notification notification) {
@@ -50,12 +52,11 @@ public class SendGridEmailDispatcher {
                 new Content("text/plain", notification.getBody() == null ? "" : notification.getBody()));
 
         try {
-            SendGrid sg = new SendGrid(apiKey);
             Request request = new Request();
             request.setMethod(Method.POST);
             request.setEndpoint("mail/send");
             request.setBody(mail.build());
-            Response response = sg.api(request);
+            Response response = sendGridClient.send(request);
             int status = response.getStatusCode();
             if (status >= 200 && status < 300) {
                 log.info("SendGrid delivered email to {} (status {})", contact.email(), status);

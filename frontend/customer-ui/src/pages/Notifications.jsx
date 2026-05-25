@@ -7,10 +7,9 @@ import { inputStyle } from '../components/Field.jsx';
 
 function TypeChip({ type }) {
   const palette = {
-    LOW_BALANCE_NOTIFICATION: { bg: '#fde2e1', fg: '#7a1f1c' },
-    WITHDRAW_NOTIFICATION: { bg: '#fff4cc', fg: '#7a5b00' },
-    DEPOSIT_NOTIFICATION: { bg: '#d8f5e1', fg: '#155724' },
-    APPLY_MONTHLY_FEE: { bg: '#e3f0ff', fg: '#1d3a72' },
+    LOW_BALANCE: { bg: '#fde2e1', fg: '#7a1f1c' },
+    WITHDRAW: { bg: '#fff4cc', fg: '#7a5b00' },
+    FEE_APPLIED: { bg: '#e3f0ff', fg: '#1d3a72' },
   }[type] || { bg: '#e4e9f0', fg: '#52606d' };
   return (
     <span style={{

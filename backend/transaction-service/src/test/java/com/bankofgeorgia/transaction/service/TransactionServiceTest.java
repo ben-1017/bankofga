@@ -1,6 +1,7 @@
 package com.bankofgeorgia.transaction.service;
 
 import com.bankofgeorgia.transaction.dto.AccountResponse;
+import com.bankofgeorgia.transaction.dto.ApplyMonthlyFeeRequest;
 import com.bankofgeorgia.transaction.dto.DepositRequest;
 import com.bankofgeorgia.transaction.dto.WithdrawRequest;
 import com.bankofgeorgia.transaction.event.WithdrawEventPublisher;
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -144,6 +146,27 @@ class TransactionServiceTest {
         Transaction tx = transactionService.withdraw(new WithdrawRequest("acc-1", new BigDecimal("20"), null));
 
         assertThat(tx.getBalanceAfter()).isEqualByComparingTo("80");
+    }
+
+    @Test
+    void applyMonthlyFee_debitsAccountAndRecordsFeeTransaction_withoutWithdrawNotification() {
+        AccountResponse before = new AccountResponse("acc-1", "cust-1", "BOG123", new BigDecimal("80"), "ACTIVE");
+        AccountResponse after  = new AccountResponse("acc-1", "cust-1", "BOG123", new BigDecimal("75"), "ACTIVE");
+
+        when(restTemplate.getForObject(anyString(), eq(AccountResponse.class))).thenReturn(before);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(), eq(AccountResponse.class)))
+                .thenReturn(ResponseEntity.ok(after));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Transaction tx = transactionService.applyMonthlyFee(
+                new ApplyMonthlyFeeRequest("acc-1", new BigDecimal("5.00"), null));
+
+        assertThat(tx.getType()).isEqualTo(TransactionType.FEE);
+        assertThat(tx.getAmount()).isEqualByComparingTo("5.00");
+        assertThat(tx.getBalanceBefore()).isEqualByComparingTo("80");
+        assertThat(tx.getBalanceAfter()).isEqualByComparingTo("75");
+        assertThat(tx.getDescription()).isEqualTo("Monthly maintenance fee");
+        verify(withdrawEventPublisher, never()).publish(any());
     }
 
     @Test

@@ -14,6 +14,14 @@ account:
   service:
     url: ${ACCOUNT_SERVICE_URL:http://localhost:8083}
 
+product:
+  service:
+    url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
+transaction:
+  service:
+    url: ${TRANSACTION_SERVICE_URL:http://localhost:8084}
+
 app:
   fee:
     cron: "0 0 1 * * *"

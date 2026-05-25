@@ -34,15 +34,15 @@ class RestClientAccountQueryClientTest {
         server.expect(requestTo(BASE + "/api/accounts/internal/fee-eligible"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(
-                        "[{\"accountId\":\"a1\",\"customerId\":\"c1\"},"
-                                + "{\"accountId\":\"a2\",\"customerId\":\"c2\"}]",
+                        "[{\"accountId\":\"a1\",\"customerId\":\"c1\",\"productId\":\"p1\"},"
+                                + "{\"accountId\":\"a2\",\"customerId\":\"c2\",\"productId\":\"p2\"}]",
                         MediaType.APPLICATION_JSON));
 
         List<AccountSnapshot> result = client.findFeeEligibleAccounts();
 
         assertThat(result).containsExactly(
-                new AccountSnapshot("a1", "c1"),
-                new AccountSnapshot("a2", "c2"));
+                new AccountSnapshot("a1", "c1", "p1"),
+                new AccountSnapshot("a2", "c2", "p2"));
         server.verify();
     }
 

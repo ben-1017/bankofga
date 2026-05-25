@@ -1,6 +1,7 @@
 package com.bankofgeorgia.transaction.service;
 
 import com.bankofgeorgia.transaction.dto.AccountResponse;
+import com.bankofgeorgia.transaction.dto.ApplyMonthlyFeeRequest;
 import com.bankofgeorgia.transaction.dto.DepositRequest;
 import com.bankofgeorgia.transaction.dto.WithdrawRequest;
 import com.bankofgeorgia.transaction.event.WithdrawEventPublisher;
@@ -92,6 +93,24 @@ public class TransactionService {
         } catch (RuntimeException ignored) {
         }
         return saved;
+    }
+
+    public Transaction applyMonthlyFee(ApplyMonthlyFeeRequest request) {
+        AccountResponse before = getAccount(request.accountId());
+        AccountResponse after = updateBalance(request.accountId(), request.amount().negate());
+
+        Transaction tx = new Transaction();
+        tx.setAccountId(request.accountId());
+        tx.setType(TransactionType.FEE);
+        tx.setAmount(request.amount());
+        tx.setBalanceBefore(before.balance());
+        tx.setBalanceAfter(after.balance());
+        tx.setDescription(
+                request.description() == null || request.description().isBlank()
+                        ? "Monthly maintenance fee"
+                        : request.description());
+        tx.setCreatedAt(Instant.now());
+        return repository.save(tx);
     }
 
     private AccountResponse getAccount(String accountId) {

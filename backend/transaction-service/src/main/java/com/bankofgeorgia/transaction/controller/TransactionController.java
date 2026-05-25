@@ -1,5 +1,6 @@
 package com.bankofgeorgia.transaction.controller;
 
+import com.bankofgeorgia.transaction.dto.ApplyMonthlyFeeRequest;
 import com.bankofgeorgia.transaction.dto.DepositRequest;
 import com.bankofgeorgia.transaction.dto.TransactionResponse;
 import com.bankofgeorgia.transaction.dto.WithdrawRequest;
@@ -31,6 +32,12 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(TransactionResponse.from(transactionService.withdraw(request)));
+    }
+
+    @PostMapping("/internal/monthly-fee")
+    public ResponseEntity<TransactionResponse> applyMonthlyFee(@Valid @RequestBody ApplyMonthlyFeeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(TransactionResponse.from(transactionService.applyMonthlyFee(request)));
     }
 
     @GetMapping("/account/{accountId}")

@@ -226,10 +226,15 @@ services:
     restart: unless-stopped
     depends_on:
       - kafka
+      - product-service
+      - transaction-service
     ports:
       - "8086:8086"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ACCOUNT_SERVICE_URL: http://account-service:8083
+      PRODUCT_SERVICE_URL: http://product-service:8082
+      TRANSACTION_SERVICE_URL: http://transaction-service:8084
     networks:
       - bog-net
 

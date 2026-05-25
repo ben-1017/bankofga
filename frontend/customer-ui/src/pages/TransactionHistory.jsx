@@ -15,7 +15,7 @@ function formatMoney(amount) {
 function TypeBadge({ type }) {
   const palette = {
     DEPOSIT: { bg: '#d8f5e1', fg: '#155724' },
-    WITHDRAW: { bg: '#fde2e1', fg: '#7a1f1c' },
+    WITHDRAWAL: { bg: '#fde2e1', fg: '#7a1f1c' },
     FEE: { bg: '#fff4cc', fg: '#7a5b00' },
     INTEREST: { bg: '#e3f0ff', fg: '#1d3a72' },
   }[type] || { bg: '#e4e9f0', fg: '#52606d' };
@@ -95,7 +95,7 @@ export default function TransactionHistory() {
         >
           <option value="ALL">All types</option>
           <option value="DEPOSIT">Deposits</option>
-          <option value="WITHDRAW">Withdrawals</option>
+          <option value="WITHDRAWAL">Withdrawals</option>
           <option value="FEE">Fees</option>
           <option value="INTEREST">Interest</option>
         </select>

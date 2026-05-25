@@ -7,8 +7,9 @@ A modern digital banking system built with a microservices architecture.
 Bank of Georgia supports customer onboarding, account/product management, basic
 banking transactions, and event-driven notifications. The backend is a set of
 Spring Boot microservices; the frontend consists of two ReactJS applications
-(customer and admin). MongoDB, Redis, and Kafka provide persistence, caching,
-and event streaming, and the whole stack runs under Docker.
+(customer and admin). MongoDB and Kafka provide persistence and event
+streaming. Redis is provisioned by Docker for future caching experiments, but
+the services do not currently require it.
 
 ## Architecture
 
@@ -21,8 +22,7 @@ bank-of-georgia/
 │   ├── account-service/      # Customer accounts, balances
 │   ├── transaction-service/  # Deposits, withdrawals
 │   ├── notification-service/ # Email/SMS via Twilio/SendGrid
-│   ├── scheduler-service/    # Daily fee job
-│   └── common/               # Shared DTOs, events, utils
+│   └── scheduler-service/    # Daily fee job
 ├── frontend/
 │   ├── customer-ui/          # Customer-facing React app
 │   └── admin-ui/             # Employee/admin React app
@@ -43,7 +43,7 @@ bank-of-georgia/
 | Account | One customer → many accounts, balances |
 | Transaction | Deposit and withdraw |
 | Notification | Kafka-driven email/SMS fan-out |
-| Scheduler | Daily scan → apply $5 monthly fee when daily balance < $100 on Checking |
+| Scheduler | Daily scan → apply $5 monthly fee to low-balance Checking accounts and notify by email |
 
 ## Kafka Events
 
@@ -55,7 +55,7 @@ bank-of-georgia/
 
 - **Backend:** Java 17, Spring Boot, Maven
 - **Frontend:** ReactJS
-- **Data:** MongoDB, Redis
+- **Data:** MongoDB (Redis is provisioned but currently optional)
 - **Events:** Apache Kafka
 - **Notifications:** Twilio / SendGrid (trial tier)
 - **Containers:** Docker, docker-compose
@@ -76,9 +76,25 @@ docker compose up -d
 
 This brings up:
 - MongoDB on `localhost:27017` (+ Mongo Express UI on `localhost:8081`)
-- Redis on `localhost:6379`
+- Redis on `localhost:6379` (optional; not used by services yet)
 - Zookeeper on `localhost:2181`
 - Kafka on `localhost:9092` (+ Kafka UI on `localhost:8090`)
+
+### Optional notification provider credentials
+
+The notification service persists every notification even without provider
+credentials. Real email/SMS delivery is best-effort and starts only when the
+provider environment variables are set:
+
+```bash
+cd infra/docker
+cp .env.example .env
+# edit .env with a verified SENDGRID_FROM and a real SENDGRID_API_KEY
+docker compose up -d --build notification-service
+```
+
+For email, configure `SENDGRID_API_KEY` and `SENDGRID_FROM`. For SMS, configure
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER`.
 
 Tear it down with:
 
@@ -169,6 +185,43 @@ Seeded employee logins: `admin@bankofga.com / admin123`,
 cd frontend/admin-ui    && npm install && npm run dev   # http://localhost:3001  (employee login)
 cd frontend/customer-ui && npm install && npm run dev   # http://localhost:3000  (register a customer)
 ```
+
+## Final Demo Script
+
+Use this path for a concise end-to-end project demo.
+
+### Customer UI (`http://localhost:3000`)
+
+1. Register a new customer and log in.
+2. Open a Checking account.
+3. Deposit enough to put the balance above `$100`.
+4. Withdraw enough to cross below `$100`.
+5. Confirm transaction history shows the deposit and withdrawal.
+6. Confirm notifications show both withdrawal confirmation and low-balance alert.
+7. Update the customer profile.
+
+### Admin UI (`http://localhost:3001`)
+
+1. Log in as `admin@bankofga.com / admin123`.
+2. Create or edit a banking product.
+3. View the customer list and open the newly registered customer.
+4. View the account list and open the customer's account detail.
+5. Confirm account balance, product, customer metadata, and transaction history are visible.
+
+### Scheduled Monthly Fee
+
+The scheduler runs from `scheduler-service` with `app.fee.cron: "0 0 1 * * *"`.
+It scans low-balance accounts, charges the `$5` fee only for Checking products,
+records a `FEE` transaction through transaction-service, and publishes the fee
+notification event.
+
+### Delivery Credentials and OTP Scope
+
+In-app notifications work without external credentials. Real email delivery
+requires SendGrid credentials; real SMS delivery requires Twilio credentials.
+OTP/2FA is not implemented in this project: provider credentials would only
+deliver an OTP after a separate OTP generation, storage, expiry, and
+verification flow is added.
 
 **Tear down:** `cd infra/docker && docker compose down` (add `-v` to also wipe data).
 

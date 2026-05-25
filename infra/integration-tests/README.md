@@ -1,10 +1,10 @@
 # Integration tests
 
-Newman-based end-to-end runner that exercises every service via the shared Postman collection at `docs/BankOfGA.postman_collection.json`. Closes the Apr 30 "Integration testing & bug fixes" item.
+Newman-based end-to-end runner that exercises the Docker stack through the API gateway via `docs/BankOfGA-Sprint4.postman_collection.json`.
 
 ## What it does
 
-`wait-for-services.sh` polls TCP on each service port (8181, 8082–8085) until reachable, then `newman` runs every request in order. Variables (`customer_id`, `account_id`, `transaction_id`, …) are chained between requests by the collection's pre-request and test scripts. A failure in any request fails the whole run.
+`wait-for-services.sh` polls HTTP on each backend service port until reachable, then `newman` runs every request in order. Variables (`customerId`, `accountId`, `transactionId`, ...) are chained between requests by the collection's pre-request and test scripts. A failure in any request fails the whole run.
 
 ## Usage
 
@@ -38,4 +38,4 @@ Designed to run after `docker compose up -d` in a workflow:
 - run: cd infra/integration-tests && npm ci && npm run ci
 ```
 
-A GitHub Actions wiring is intentionally out of scope for this PR.
+A GitHub Actions wiring can use the same two commands above.

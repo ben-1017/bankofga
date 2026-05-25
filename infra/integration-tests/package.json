@@ -2,10 +2,10 @@
   "name": "bankofga-integration-tests",
   "private": true,
   "version": "0.0.0",
-  "description": "Newman runner for the BankOfGA Postman collection. Exercises all 5 services end-to-end.",
+  "description": "Newman runner for the BankOfGA Sprint 4 Postman collection. Exercises the Docker stack through the gateway.",
   "scripts": {
-    "test": "newman run ../../docs/BankOfGA.postman_collection.json --reporters cli,junit --reporter-junit-export ./reports/junit.xml --bail folder",
-    "test:no-bail": "newman run ../../docs/BankOfGA.postman_collection.json --reporters cli,junit --reporter-junit-export ./reports/junit.xml",
+    "test": "newman run ../../docs/BankOfGA-Sprint4.postman_collection.json --reporters cli,junit --reporter-junit-export ./reports/junit.xml --bail folder",
+    "test:no-bail": "newman run ../../docs/BankOfGA-Sprint4.postman_collection.json --reporters cli,junit --reporter-junit-export ./reports/junit.xml",
     "wait-for-services": "./wait-for-services.sh",
     "ci": "./wait-for-services.sh && npm test"
   },
